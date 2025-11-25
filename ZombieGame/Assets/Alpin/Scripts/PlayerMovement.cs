@@ -1,15 +1,19 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
 {
-    [Header("Hız Ayarları")]
-    public float walkSpeed = 5f;     // Normal yürüme hızı
-    public float runSpeed = 9f;      // Shift'e basınca koşma hızı
+    [Header("HÄ±z AyarlarÄ±")]
+    public float walkSpeed = 5f;     // Normal yÃ¼rÃ¼me hÄ±zÄ±
+    public float runSpeed = 9f;      // Shift'e basÄ±nca koÅŸma hÄ±zÄ±
 
     [Header("Fizik")]
-    public float gravity = -9.81f;   // Yerçekimi (negatif!)
-    public float jumpHeight = 1.5f;  // Zıplama yüksekliği
+    public float gravity = -9.81f;   // YerÃ§ekimi (negatif!)
+    public float jumpHeight = 1.5f;  // ZÄ±plama yÃ¼ksekliÄŸi
+
+    [Header("Animasyon")]
+    public Animator animator;        // CharacterModel Ã¼zerindeki Animator'Ä± buraya ver
+    public string speedParam = "Speed"; // Animator'daki float parametre adÄ±
 
     private CharacterController controller;
     private Vector3 velocity;
@@ -21,10 +25,10 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        // Yere değiyor muyuz?
+        // Yere deÄŸiyor muyuz?
         bool isGrounded = controller.isGrounded;
 
-        // Yerdeyken aşağı doğru hız birikmesin
+        // Yerdeyken aÅŸaÄŸÄ± doÄŸru hÄ±z birikmesin
         if (isGrounded && velocity.y < 0)
         {
             velocity.y = -2f;
@@ -32,28 +36,35 @@ public class PlayerMovement : MonoBehaviour
 
         // WASD input
         float horizontal = Input.GetAxis("Horizontal");  // A / D
-        float vertical = Input.GetAxis("Vertical");    // W / S
+        float vertical = Input.GetAxis("Vertical");      // W / S
 
-        // Player'ın baktığı yöne göre hareket yönü
+        // Player'Ä±n baktÄ±ÄŸÄ± yÃ¶ne gÃ¶re hareket yÃ¶nÃ¼
         Vector3 move = transform.right * horizontal + transform.forward * vertical;
 
-        // Koşma: Left Shift basılıysa runSpeed, değilse walkSpeed
+        // KoÅŸma: Left Shift basÄ±lÄ±ysa runSpeed, deÄŸilse walkSpeed
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
         float currentSpeed = isRunning ? runSpeed : walkSpeed;
 
         // Yatay hareket
         controller.Move(move * currentSpeed * Time.deltaTime);
 
-        // Zıplama – sadece yere basıyorsak
-        if (isGrounded && Input.GetButtonDown("Jump"))   // varsayılan: Space
+        // âœ… Animasyon Speed (Idle/Walk geÃ§iÅŸi iÃ§in 0-1 arasÄ±)
+        if (animator != null)
+        {
+            float speed01 = new Vector2(horizontal, vertical).magnitude; // 0=idle, 1=hareket
+            animator.SetFloat(speedParam, speed01);
+        }
+
+        // ZÄ±plama â€“ sadece yere basÄ±yorsak
+        if (isGrounded && Input.GetButtonDown("Jump"))   // varsayÄ±lan: Space
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
 
-        // Yerçekimi
+        // YerÃ§ekimi
         velocity.y += gravity * Time.deltaTime;
 
-        // Düşme / zıplama hareketini uygula
+        // DÃ¼ÅŸme / zÄ±plama hareketini uygula
         controller.Move(velocity * Time.deltaTime);
     }
 }
