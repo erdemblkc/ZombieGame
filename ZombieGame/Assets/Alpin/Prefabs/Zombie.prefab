@@ -128,7 +128,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ZombieFollowPlayer
   moveSpeed: 3
-  stopDistance: 1.5
+  stopDistance: 1.3
+  attackRange: 1.6
+  attackDamage: 10
+  attackRate: 1
 --- !u!114 &3670772322896557521
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -15,8 +15,12 @@ public class PlayerMovement : MonoBehaviour
     public Animator animator;        // CharacterModel üzerindeki Animator'ı buraya ver
     public string speedParam = "Speed"; // Animator'daki float parametre adı
 
+    [Header("Knockback")]
+    public float knockbackDamp = 3f; // Geri tepme ne kadar hızlı sönsün
+
     private CharacterController controller;
-    private Vector3 velocity;
+    private Vector3 velocity;        // Zıplama / düşme için dikey hız
+    private Vector3 impact;          // Knockback vektörü
 
     void Start()
     {
@@ -45,9 +49,6 @@ public class PlayerMovement : MonoBehaviour
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
         float currentSpeed = isRunning ? runSpeed : walkSpeed;
 
-        // Yatay hareket
-        controller.Move(move * currentSpeed * Time.deltaTime);
-
         // ✅ Animasyon Speed (Idle/Walk geçişi için 0-1 arası)
         if (animator != null)
         {
@@ -64,7 +65,45 @@ public class PlayerMovement : MonoBehaviour
         // Yerçekimi
         velocity.y += gravity * Time.deltaTime;
 
-        // Düşme / zıplama hareketini uygula
-        controller.Move(velocity * Time.deltaTime);
+        // 🔹 Knockback vektörünü yavaşça sıfıra doğru azalt
+        if (impact.magnitude > 0.2f)
+        {
+            impact = Vector3.Lerp(impact, Vector3.zero, knockbackDamp * Time.deltaTime);
+        }
+        else
+        {
+            impact = Vector3.zero;
+        }
+
+        // 🧪 TEST: K tuşuna basınca oyuncuyu geriye doğru it
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            // -transform.forward = yüzümüzün tam tersi yön (tam geriye)
+            AddImpact(-transform.forward, 18f, 1f);
+        }
+
+        // Tüm hareketleri tek Move çağrısında birleştir
+        Vector3 finalMove =
+            (move * currentSpeed) +          // normal hareket
+            impact +                         // knockback
+            new Vector3(0f, velocity.y, 0f); // zıplama/düşme
+
+        controller.Move(finalMove * Time.deltaTime);
+    }
+
+    /// <summary>
+    /// Dışarıdan knockback uygulamak için (zombi vs.)
+    /// </summary>
+    public void AddImpact(Vector3 direction, float force, float upwardForce = 0.5f)
+    {
+        // Yatay yönü normalleştir
+        direction.y = 0f;
+        direction.Normalize();
+
+        // Yön + hafif yukarı doğru
+        Vector3 knockDir = direction + Vector3.up * upwardForce;
+
+        // Etkiyi ekle
+        impact += knockDir * force;
     }
 }

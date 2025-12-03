@@ -1,23 +1,43 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 public class ZombieFollowPlayer : MonoBehaviour
 {
-    public float moveSpeed = 3f;     // Zombi hýz
-    public float stopDistance = 1.5f; // Çok yakýna gelince duracaðý mesafe
+    [Header("Hareket")]
+    public float moveSpeed = 3f;        // Zombi hÄ±zÄ±
+    public float stopDistance = 1.3f;   // Bu mesafeye kadar yÃ¼rÃ¼sÃ¼n
+
+    [Header("SaldÄ±rÄ±")]
+    public float attackRange = 1.6f;    // Bu mesafedeyken vurabilsin
+    public float attackDamage = 10f;    // Her vuruÅŸta vereceÄŸi hasar
+    public float attackRate = 1f;       // Saniyede kaÃ§ kere vurabilir (1 = 1/sn)
+
+    [Header("Animasyon")]
+    public Animator animator;           // Zombinin Animator'u
+    public string speedParam = "Speed"; // Animator'daki float parametre adÄ±
+
+    private float nextAttackTime = 0f;
 
     private Transform target;
+    private PlayerHealth playerHealth;
 
     void Start()
     {
-        // Sahnedeki Player tag'li objeyi bul
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        // Sahnedeki PlayerHealth'i bul ve hedef olarak onu kullan
+        playerHealth = FindFirstObjectByType<PlayerHealth>();
+
+        if (playerHealth != null)
         {
-            target = player.transform;
+            target = playerHealth.transform;
         }
         else
         {
-            Debug.LogWarning("Player tag'li obje bulunamadý!");
+            Debug.LogWarning("Zombie: Sahne'de PlayerHealth bulunamadÄ±!");
+        }
+
+        // AnimatÃ¶rÃ¼ otomatik bul (Inspector'dan atamazsan)
+        if (animator == null)
+        {
+            animator = GetComponentInChildren<Animator>();
         }
     }
 
@@ -25,22 +45,61 @@ public class ZombieFollowPlayer : MonoBehaviour
     {
         if (target == null) return;
 
-        // Hedefe doðru yön bul
+        // Player'a yÃ¶n ve mesafe
         Vector3 direction = target.position - transform.position;
-        direction.y = 0f; // Yukarý-aþaðý eðilmesin
+        direction.y = 0f;
 
         float distance = direction.magnitude;
 
-        // Çok yaklaþmýþsa hareket etmesin
-        if (distance <= stopDistance)
-            return;
+        if (distance > 0.01f)
+            direction.Normalize();
 
-        direction.Normalize();
+        // Oyuncuya bak
+        if (direction != Vector3.zero)
+        {
+            transform.forward = direction;
+        }
 
-        // Ýleri doðru hareket
-        transform.position += direction * moveSpeed * Time.deltaTime;
+        // Hareket ediyor mu?
+        bool isMoving = false;
 
-        // Hep oyuncuya doðru baksýn
-        transform.forward = direction;
+        // EÄŸer Ã§ok uzaktaysa yÃ¼rÃ¼sÃ¼n
+        if (distance > stopDistance)
+        {
+            transform.position += direction * moveSpeed * Time.deltaTime;
+            isMoving = true;
+        }
+
+        // ðŸ”¹ Animasyon: YÃ¼rÃ¼me / Idle
+        if (animator != null)
+        {
+            float speed01 = isMoving ? 1f : 0f;
+            animator.SetFloat(speedParam, speed01);
+        }
+
+        // ðŸ”¹ SaldÄ±rÄ±
+        if (distance <= attackRange && playerHealth != null)
+        {
+            if (Time.time >= nextAttackTime)
+            {
+                nextAttackTime = Time.time + 1f / attackRate;
+
+                // Zombiden player'a doÄŸru vektÃ¶r
+                Vector3 hitDir = (target.position - transform.position).normalized;
+
+                // Hasar + knockback
+                playerHealth.TakeDamage(attackDamage, hitDir);
+            }
+        }
+    }
+
+    // EditÃ¶r'de menzilleri gÃ¶rmek iÃ§in (isteÄŸe baÄŸlÄ±)
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, stopDistance);
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, attackRange);
     }
 }
