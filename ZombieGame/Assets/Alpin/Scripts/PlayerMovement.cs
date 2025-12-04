@@ -12,19 +12,39 @@ public class PlayerMovement : MonoBehaviour
     public float jumpHeight = 1.5f;  // Zıplama yüksekliği
 
     [Header("Animasyon")]
-    public Animator animator;        // CharacterModel üzerindeki Animator'ı buraya ver
-    public string speedParam = "Speed"; // Animator'daki float parametre adı
+    public Animator animator;        // Model Mesh üzerindeki Animator
 
-    [Header("Knockback")]
-    public float knockbackDamp = 3f; // Geri tepme ne kadar hızlı sönsün
+    // Animator'daki state isimleri
+    private const string IdleStateName = "Idle";
+    private const string WalkStateName = "walk";
+
+    [Header("Knockback (Hasar Tepkisi)")]
+    public float knockbackDamping = 5f; // Geri itilmeyi ne kadar hızlı sönümlensin (5 iyi bir değer)
 
     private CharacterController controller;
-    private Vector3 velocity;        // Zıplama / düşme için dikey hız
-    private Vector3 impact;          // Knockback vektörü
+    private Vector3 velocity;            // Sadece dikey hareket (zıplama + yerçekimi) için
+    private Vector3 knockbackVelocity;   // Hasar alınca geri itme vektörü
+
+    private bool lastIsMoving = false;   // Bir önceki frame'de hareket ediyor muydu?
 
     void Start()
     {
         controller = GetComponent<CharacterController>();
+
+        // Eğer inspector'dan atamadıysan child'lardan Animator bul
+        if (animator == null)
+        {
+            animator = GetComponentInChildren<Animator>();
+        }
+
+        if (animator != null)
+        {
+            animator.Play(IdleStateName, 0, 0f);
+        }
+        else
+        {
+            Debug.LogError("Player: Animator bulunamadı!");
+        }
     }
 
     void Update()
@@ -49,11 +69,23 @@ public class PlayerMovement : MonoBehaviour
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
         float currentSpeed = isRunning ? runSpeed : walkSpeed;
 
-        // ✅ Animasyon Speed (Idle/Walk geçişi için 0-1 arası)
+        // Yatay hareket (knockback hariç)
+        controller.Move(move * currentSpeed * Time.deltaTime);
+
+        // === ANİMASYON ===
         if (animator != null)
         {
-            float speed01 = new Vector2(horizontal, vertical).magnitude; // 0=idle, 1=hareket
-            animator.SetFloat(speedParam, speed01);
+            // Hareket ediyor mu? (input var mı)
+            bool isMoving = new Vector2(horizontal, vertical).sqrMagnitude > 0.01f;
+
+            // Sadece durum değiştiğinde state değiştir
+            if (isMoving != lastIsMoving)
+            {
+                string targetState = isMoving ? WalkStateName : IdleStateName;
+                animator.CrossFade(targetState, 0.1f);  // Idle <-> walk
+
+                lastIsMoving = isMoving;
+            }
         }
 
         // Zıplama – sadece yere basıyorsak
@@ -65,45 +97,33 @@ public class PlayerMovement : MonoBehaviour
         // Yerçekimi
         velocity.y += gravity * Time.deltaTime;
 
-        // 🔹 Knockback vektörünü yavaşça sıfıra doğru azalt
-        if (impact.magnitude > 0.2f)
-        {
-            impact = Vector3.Lerp(impact, Vector3.zero, knockbackDamp * Time.deltaTime);
-        }
-        else
-        {
-            impact = Vector3.zero;
-        }
+        // Düşme / zıplama hareketini uygula
+        controller.Move(velocity * Time.deltaTime);
 
-        // 🧪 TEST: K tuşuna basınca oyuncuyu geriye doğru it
-        if (Input.GetKeyDown(KeyCode.K))
+        // === KNOCKBACK HAREKETİ ===
+        if (knockbackVelocity.sqrMagnitude > 0.001f)
         {
-            // -transform.forward = yüzümüzün tam tersi yön (tam geriye)
-            AddImpact(-transform.forward, 18f, 1f);
+            controller.Move(knockbackVelocity * Time.deltaTime);
+            // Yavaş yavaş sıfıra çek
+            knockbackVelocity = Vector3.Lerp(knockbackVelocity, Vector3.zero, knockbackDamping * Time.deltaTime);
         }
-
-        // Tüm hareketleri tek Move çağrısında birleştir
-        Vector3 finalMove =
-            (move * currentSpeed) +          // normal hareket
-            impact +                         // knockback
-            new Vector3(0f, velocity.y, 0f); // zıplama/düşme
-
-        controller.Move(finalMove * Time.deltaTime);
     }
 
     /// <summary>
-    /// Dışarıdan knockback uygulamak için (zombi vs.)
+    /// PlayerHealth tarafından çağrılan geri itme fonksiyonu.
     /// </summary>
-    public void AddImpact(Vector3 direction, float force, float upwardForce = 0.5f)
+    public void AddImpact(Vector3 direction, float force)
     {
-        // Yatay yönü normalleştir
-        direction.y = 0f;
+        direction.y = Mathf.Abs(direction.y);
         direction.Normalize();
+        knockbackVelocity = direction * force;
+    }
 
-        // Yön + hafif yukarı doğru
-        Vector3 knockDir = direction + Vector3.up * upwardForce;
-
-        // Etkiyi ekle
-        impact += knockDir * force;
+    // 3 parametreli eski çağrı için
+    public void AddImpact(Vector3 direction, float force, float extraUpForce)
+    {
+        direction.y += extraUpForce;
+        AddImpact(direction, force);
     }
 }
+

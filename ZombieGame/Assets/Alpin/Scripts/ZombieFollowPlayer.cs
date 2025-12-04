@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.AI;
 
 public class ZombieFollowPlayer : MonoBehaviour
 {
@@ -12,19 +13,24 @@ public class ZombieFollowPlayer : MonoBehaviour
     public float attackRate = 1f;       // Saniyede kaç kere vurabilir (1 = 1/sn)
 
     [Header("Animasyon")]
-    public Animator animator;           // Zombinin Animator'u
-    public string speedParam = "Speed"; // Animator'daki float parametre adı
+    public Animator animator;           // Model Mesh üzerindeki Animator
+
+    // Animator state isimleri (Animator penceresindeki state adlarıyla birebir aynı olmalı!)
+    private const string IdleStateName = "Idle";
+    private const string WalkStateName = "walk";
 
     private float nextAttackTime = 0f;
 
     private Transform target;
     private PlayerHealth playerHealth;
+    private NavMeshAgent agent;
+
+    private bool lastIsMoving = false;
 
     void Start()
     {
-        // Sahnedeki PlayerHealth'i bul ve hedef olarak onu kullan
+        // Player'ı bul
         playerHealth = FindFirstObjectByType<PlayerHealth>();
-
         if (playerHealth != null)
         {
             target = playerHealth.transform;
@@ -34,50 +40,65 @@ public class ZombieFollowPlayer : MonoBehaviour
             Debug.LogWarning("Zombie: Sahne'de PlayerHealth bulunamadı!");
         }
 
-        // Animatörü otomatik bul (Inspector'dan atamazsan)
+        // NavMeshAgent'i al
+        agent = GetComponent<NavMeshAgent>();
+        if (agent == null)
+        {
+            Debug.LogError("Zombie: NavMeshAgent component'i yok! " + name);
+        }
+        else
+        {
+            agent.speed = moveSpeed;
+            agent.stoppingDistance = stopDistance;
+            agent.updateRotation = true;
+            agent.updatePosition = true;
+        }
+
+        // Animatörü al: inspector'dan atanmamışsa child'lardan bul
         if (animator == null)
         {
             animator = GetComponentInChildren<Animator>();
+        }
+
+        if (animator == null)
+        {
+            Debug.LogError("Zombie: Animator bulunamadı! " + name);
+        }
+        else
+        {
+            // Başlangıçta Idle'a geç
+            animator.Play(IdleStateName, 0, 0f);
         }
     }
 
     void Update()
     {
-        if (target == null) return;
+        if (agent == null || target == null) return;
 
-        // Player'a yön ve mesafe
-        Vector3 direction = target.position - transform.position;
-        direction.y = 0f;
+        // Her frame hedef olarak player'ı ver
+        agent.SetDestination(target.position);
 
-        float distance = direction.magnitude;
+        float distance = Vector3.Distance(transform.position, target.position);
 
-        if (distance > 0.01f)
-            direction.Normalize();
+        // NavMeshAgent hızına göre "yürüyor mu?"
+        bool isMoving = agent.velocity.sqrMagnitude > 0.01f;
 
-        // Oyuncuya bak
-        if (direction != Vector3.zero)
+        // Animasyon: sadece durum değiştiğinde Idle <-> walk arasında geçiş yap
+        if (animator != null && isMoving != lastIsMoving)
         {
-            transform.forward = direction;
+            if (isMoving)
+            {
+                animator.CrossFade(WalkStateName, 0.1f);
+            }
+            else
+            {
+                animator.CrossFade(IdleStateName, 0.1f);
+            }
+
+            lastIsMoving = isMoving;
         }
 
-        // Hareket ediyor mu?
-        bool isMoving = false;
-
-        // Eğer çok uzaktaysa yürüsün
-        if (distance > stopDistance)
-        {
-            transform.position += direction * moveSpeed * Time.deltaTime;
-            isMoving = true;
-        }
-
-        // 🔹 Animasyon: Yürüme / Idle
-        if (animator != null)
-        {
-            float speed01 = isMoving ? 1f : 0f;
-            animator.SetFloat(speedParam, speed01);
-        }
-
-        // 🔹 Saldırı
+        // Saldırı
         if (distance <= attackRange && playerHealth != null)
         {
             if (Time.time >= nextAttackTime)
@@ -86,14 +107,12 @@ public class ZombieFollowPlayer : MonoBehaviour
 
                 // Zombiden player'a doğru vektör
                 Vector3 hitDir = (target.position - transform.position).normalized;
-
-                // Hasar + knockback
                 playerHealth.TakeDamage(attackDamage, hitDir);
             }
         }
     }
 
-    // Editör'de menzilleri görmek için (isteğe bağlı)
+    // Editör'de menzilleri görmek için
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
