@@ -14,15 +14,25 @@ public class PlayerMovement : MonoBehaviour
     [Header("Animasyon")]
     public Animator animator;        // Model Mesh üzerindeki Animator
 
-    // Animator'daki state isimleri
+    // Animator'daki state isimleri (Animator penceresinde yazan isimlerle birebir aynı olmalı)
     private const string IdleStateName = "Idle";
     private const string WalkStateName = "walk";
+    private const string WalkArmedStateName = "walk_gun"; // Silahlı yürüyüş state'i
+
+    [Header("Model Root (Transform Sabitleme)")]
+    public Transform modelRoot;                // Model Mesh objesi
+    private Vector3 modelRootInitialScale;  // Başlangıç ölçeği (ör: 500,500,500)
+    private Vector3 modelRootInitialPos;    // Başlangıç localPosition
+    private Quaternion modelRootInitialRot;    // Başlangıç localRotation
 
     [Header("Knockback (Hasar Tepkisi)")]
-    public float knockbackDamping = 5f; // Geri itilmeyi ne kadar hızlı sönümlensin (5 iyi bir değer)
+    public float knockbackDamping = 5f; // Geri itilmeyi ne kadar hızlı sönümlensin
+
+    [Header("Silah / Durum")]
+    public bool isArmed = false;   // Silah alındı mı?
 
     private CharacterController controller;
-    private Vector3 velocity;            // Sadece dikey hareket (zıplama + yerçekimi) için
+    private Vector3 velocity;            // Zıplama + yerçekimi
     private Vector3 knockbackVelocity;   // Hasar alınca geri itme vektörü
 
     private bool lastIsMoving = false;   // Bir önceki frame'de hareket ediyor muydu?
@@ -45,6 +55,14 @@ public class PlayerMovement : MonoBehaviour
         {
             Debug.LogError("Player: Animator bulunamadı!");
         }
+
+        // Model transform'unu kaydet (animasyon ne yaparsa yapsın biz bunu geri yazacağız)
+        if (modelRoot != null)
+        {
+            modelRootInitialScale = modelRoot.localScale;
+            modelRootInitialPos = modelRoot.localPosition;
+            modelRootInitialRot = modelRoot.localRotation;
+        }
     }
 
     void Update()
@@ -60,30 +78,40 @@ public class PlayerMovement : MonoBehaviour
 
         // WASD input
         float horizontal = Input.GetAxis("Horizontal");  // A / D
-        float vertical = Input.GetAxis("Vertical");      // W / S
+        float vertical = Input.GetAxis("Vertical");    // W / S
 
         // Player'ın baktığı yöne göre hareket yönü
         Vector3 move = transform.right * horizontal + transform.forward * vertical;
 
         // Koşma: Left Shift basılıysa runSpeed, değilse walkSpeed
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
-        float currentSpeed = isRunning ? runSpeed : walkSpeed;
+        float currSpeed = isRunning ? runSpeed : walkSpeed;
 
         // Yatay hareket (knockback hariç)
-        controller.Move(move * currentSpeed * Time.deltaTime);
+        controller.Move(move * currSpeed * Time.deltaTime);
 
-        // === ANİMASYON ===
+        // === ANİMASYON KISMI ===
         if (animator != null)
         {
             // Hareket ediyor mu? (input var mı)
             bool isMoving = new Vector2(horizontal, vertical).sqrMagnitude > 0.01f;
 
-            // Sadece durum değiştiğinde state değiştir
+            // Sadece "harekete başladı / durdu" anlarında state değiştir
             if (isMoving != lastIsMoving)
             {
-                string targetState = isMoving ? WalkStateName : IdleStateName;
-                animator.CrossFade(targetState, 0.1f);  // Idle <-> walk
+                string targetState;
 
+                if (isMoving)
+                {
+                    // Silahlı mı, silahsız mı?
+                    targetState = isArmed ? WalkArmedStateName : WalkStateName;
+                }
+                else
+                {
+                    targetState = IdleStateName;
+                }
+
+                animator.CrossFade(targetState, 0.1f);
                 lastIsMoving = isMoving;
             }
         }
@@ -104,26 +132,49 @@ public class PlayerMovement : MonoBehaviour
         if (knockbackVelocity.sqrMagnitude > 0.001f)
         {
             controller.Move(knockbackVelocity * Time.deltaTime);
-            // Yavaş yavaş sıfıra çek
-            knockbackVelocity = Vector3.Lerp(knockbackVelocity, Vector3.zero, knockbackDamping * Time.deltaTime);
+            knockbackVelocity = Vector3.Lerp(
+                knockbackVelocity,
+                Vector3.zero,
+                knockbackDamping * Time.deltaTime
+            );
+        }
+    }
+
+    void LateUpdate()
+    {
+        // Animasyon Model Mesh'in Transform'u ile oynasa bile, her frame sonunda
+        // başlangıç değerlerine geri çekiyoruz.
+        if (modelRoot != null)
+        {
+            modelRoot.localScale = modelRootInitialScale;
+            modelRoot.localPosition = modelRootInitialPos;
+            modelRoot.localRotation = modelRootInitialRot;
         }
     }
 
     /// <summary>
-    /// PlayerHealth tarafından çağrılan geri itme fonksiyonu.
+    /// Zombie saldırdığında geri itme için PlayerHealth'ten çağrılıyor.
     /// </summary>
     public void AddImpact(Vector3 direction, float force)
     {
-        direction.y = Mathf.Abs(direction.y);
+        direction.y = Mathf.Abs(direction.y);   // aşağı doğru vurulmasın
         direction.Normalize();
+
         knockbackVelocity = direction * force;
     }
 
-    // 3 parametreli eski çağrı için
+    // Eski 3 parametreli çağrılar için overload
     public void AddImpact(Vector3 direction, float force, float extraUpForce)
     {
         direction.y += extraUpForce;
         AddImpact(direction, force);
     }
-}
 
+    /// <summary>
+    /// Silah alındığında pickup script'i burayı çağıracak.
+    /// </summary>
+    public void SetArmed(bool armed)
+    {
+        isArmed = armed;
+    }
+}

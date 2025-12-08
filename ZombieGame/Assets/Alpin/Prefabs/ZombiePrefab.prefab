@@ -189,7 +189,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8588207764967420762
 Transform:
   m_ObjectHideFlags: 0
@@ -327,10 +327,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7b36f18c51b6ec4183a78ec78b7c139, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GunController
-  damage: 25
-  range: 100
-  fireRate: 5
-  fpsCamera: {fileID: 0}
+  playerTag: Player
 --- !u!1 &7292808448815020022
 GameObject:
   m_ObjectHideFlags: 0
