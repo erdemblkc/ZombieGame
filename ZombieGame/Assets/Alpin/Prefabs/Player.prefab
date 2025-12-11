@@ -157,10 +157,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   walkSpeed: 5
   runSpeed: 9
+  dashSpeed: 14
+  dashDuration: 0.15
+  dashCooldown: 0.8
+  aimKey: 324
   gravity: -9.81
   jumpHeight: 1.5
   animator: {fileID: 1977892086103274704}
   modelRoot: {fileID: 0}
+  lockModelRootTransform: 1
+  useManualModelScale: 0
+  manualModelScale: {x: 500, y: 500, z: 500}
   knockbackDamping: 5
   isArmed: 0
 --- !u!114 &6078904944417692399
@@ -403,6 +410,10 @@ PrefabInstance:
       propertyPath: m_TagString
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 5772048820523951517, guid: 7c3c10a33ec9c0745846c804e153dca9, type: 3}
+      propertyPath: m_Name
+      value: Pistol
+      objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 7c3c10a33ec9c0745846c804e153dca9, type: 3}
       propertyPath: m_Controller
       value: 
@@ -410,8 +421,36 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5772048820523951517, guid: 7c3c10a33ec9c0745846c804e153dca9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5194717813808399389}
   m_SourcePrefab: {fileID: 100100000, guid: 7c3c10a33ec9c0745846c804e153dca9, type: 3}
+--- !u!1 &1874086940294753500 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5772048820523951517, guid: 7c3c10a33ec9c0745846c804e153dca9, type: 3}
+  m_PrefabInstance: {fileID: 5339149258974906689}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5194717813808399389
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1874086940294753500}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67e0d587931d88b41bc79bd8b505d223, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PistolGun
+  maxAmmo: 7
+  reloadTime: 1.2
+  fireRate: 0.25
+  damage: 100
+  range: 500
+  fpsCam: {fileID: 8990900246773961713}
+  characterAnimator: {fileID: 1977892086103274704}
+  shootTriggerName: Shoot
 --- !u!95 &1977892086103274704 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 7c3c10a33ec9c0745846c804e153dca9, type: 3}

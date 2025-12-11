@@ -3,7 +3,16 @@ using UnityEngine;
 public class ZombieHealth : MonoBehaviour
 {
     public float maxHealth = 100f;
-    private float currentHealth;
+    [SerializeField] private float currentHealth;
+
+    private bool isDead = false;
+    private ZombieFollowPlayer zombieFollow;
+    public float destroyDelayAfterDeath = 3f;
+
+    void Awake()
+    {
+        zombieFollow = GetComponent<ZombieFollowPlayer>();
+    }
 
     void Start()
     {
@@ -12,6 +21,8 @@ public class ZombieHealth : MonoBehaviour
 
     public void TakeDamage(float amount)
     {
+        if (isDead) return;
+
         currentHealth -= amount;
 
         if (currentHealth <= 0f)
@@ -22,7 +33,12 @@ public class ZombieHealth : MonoBehaviour
 
     void Die()
     {
-        // Ýleride burada ölüm animasyonu, ses, loot vs. oynatabiliriz
-        Destroy(gameObject);
+        if (isDead) return;
+        isDead = true;
+
+        if (zombieFollow != null)
+            zombieFollow.Die();
+
+        Destroy(gameObject, destroyDelayAfterDeath);
     }
 }

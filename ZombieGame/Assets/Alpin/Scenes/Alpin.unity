@@ -482,12 +482,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ZombieWaveSpawner
   zombiePrefab: {fileID: 808725263429026501, guid: 0ddab8a729c7dd54cb5d0369dd9d464b, type: 3}
-  zombiesPerWave: 15
+  zombiesPerWave: 30
   spawnRadius: 35
   minDistanceFromPlayer: 20
   groundLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
   blockedLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -4207,11 +4207,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2684731532099733000, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.88
+      value: 0.69
       objectReference: {fileID: 0}
     - target: {fileID: 2684731532099733000, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 85.48
+      value: 85.42
       objectReference: {fileID: 0}
     - target: {fileID: 2684731532099733000, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
       propertyPath: m_LocalRotation.w
@@ -4249,6 +4249,10 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6078904944417692399, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
+      propertyPath: currentHealth
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 6641580055819995293, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
       propertyPath: isArmed
       value: 1
@@ -4259,7 +4263,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6831853235768955334, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.526
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7663816699058293811, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
       propertyPath: m_Name

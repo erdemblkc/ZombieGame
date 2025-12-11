@@ -1,123 +1,160 @@
 ﻿using UnityEngine;
 using UnityEngine.AI;
 
+[RequireComponent(typeof(NavMeshAgent))]
 public class ZombieFollowPlayer : MonoBehaviour
 {
-    [Header("Hareket")]
-    public float moveSpeed = 3f;        // Zombi hızı
-    public float stopDistance = 1.3f;   // Bu mesafeye kadar yürüsün
-
-    [Header("Saldırı")]
-    public float attackRange = 1.6f;    // Bu mesafedeyken vurabilsin
-    public float attackDamage = 10f;    // Her vuruşta vereceği hasar
-    public float attackRate = 1f;       // Saniyede kaç kere vurabilir (1 = 1/sn)
+    [Header("Target / Saldırı")]
+    public Transform target;             // Player
+    public float stopDistance = 1.5f;    // ne kadar yakında dursun
+    public float attackRange = 1.8f;     // bu mesafede vurur
+    public float timeBetweenAttacks = 1.0f;
+    public float attackDamage = 10f;
 
     [Header("Animasyon")]
-    public Animator animator;           // Model Mesh üzerindeki Animator
+    public Animator animator;
+    private const string WalkStateName = "Zombie|Walk";
+    private const string AttackStateName = "Zombie|Attack";
+    private const string DieStateName = "Zombie|Die";
 
-    // Animator state isimleri (Animator penceresindeki state adlarıyla birebir aynı olmalı!)
-    private const string IdleStateName = "Idle";
-    private const string WalkStateName = "walk";
-
-    private float nextAttackTime = 0f;
-
-    private Transform target;
-    private PlayerHealth playerHealth;
     private NavMeshAgent agent;
+    private float lastAttackTime = -999f;
+    private bool isDead = false;
+    private string currentState = "";
 
-    private bool lastIsMoving = false;
-
-    void Start()
+    void Awake()
     {
-        // Player'ı bul
-        playerHealth = FindFirstObjectByType<PlayerHealth>();
-        if (playerHealth != null)
-        {
-            target = playerHealth.transform;
-        }
-        else
-        {
-            Debug.LogWarning("Zombie: Sahne'de PlayerHealth bulunamadı!");
-        }
-
-        // NavMeshAgent'i al
         agent = GetComponent<NavMeshAgent>();
-        if (agent == null)
-        {
-            Debug.LogError("Zombie: NavMeshAgent component'i yok! " + name);
-        }
-        else
-        {
-            agent.speed = moveSpeed;
-            agent.stoppingDistance = stopDistance;
-            agent.updateRotation = true;
-            agent.updatePosition = true;
-        }
 
-        // Animatörü al: inspector'dan atanmamışsa child'lardan bul
         if (animator == null)
-        {
             animator = GetComponentInChildren<Animator>();
+
+        if (target == null)
+        {
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+                target = playerObj.transform;
         }
 
-        if (animator == null)
+        if (target == null)
         {
-            Debug.LogError("Zombie: Animator bulunamadı! " + name);
+            Debug.LogError("ZombieFollowPlayer: Target bulunamadı. Player tag i var mi?");
         }
-        else
+
+        if (target != null)
         {
-            // Başlangıçta Idle'a geç
-            animator.Play(IdleStateName, 0, 0f);
+            agent.stoppingDistance = stopDistance;
+            agent.isStopped = false;
+            agent.SetDestination(target.position);
         }
+
+        PlayState(WalkStateName); // spawn olur olmaz yürüsün
     }
 
     void Update()
     {
-        if (agent == null || target == null) return;
+        if (isDead)
+        {
+            if (agent.enabled)
+                agent.isStopped = true;
+            return;
+        }
 
-        // Her frame hedef olarak player'ı ver
+        if (target == null)
+            return;
+
+        // her framede hedefe koş
+        agent.isStopped = false;
         agent.SetDestination(target.position);
 
         float distance = Vector3.Distance(transform.position, target.position);
 
-        // NavMeshAgent hızına göre "yürüyor mu?"
-        bool isMoving = agent.velocity.sqrMagnitude > 0.01f;
+        // debug icin
+        Debug.DrawLine(transform.position + Vector3.up * 0.5f, target.position + Vector3.up * 0.5f, Color.green);
 
-        // Animasyon: sadece durum değiştiğinde Idle <-> walk arasında geçiş yap
-        if (animator != null && isMoving != lastIsMoving)
+        bool canAttack = distance <= attackRange &&
+                         Time.time >= lastAttackTime + timeBetweenAttacks;
+
+        if (canAttack)
         {
-            if (isMoving)
-            {
-                animator.CrossFade(WalkStateName, 0.1f);
-            }
-            else
-            {
-                animator.CrossFade(IdleStateName, 0.1f);
-            }
-
-            lastIsMoving = isMoving;
-        }
-
-        // Saldırı
-        if (distance <= attackRange && playerHealth != null)
-        {
-            if (Time.time >= nextAttackTime)
-            {
-                nextAttackTime = Time.time + 1f / attackRate;
-
-                // Zombiden player'a doğru vektör
-                Vector3 hitDir = (target.position - transform.position).normalized;
-                playerHealth.TakeDamage(attackDamage, hitDir);
-            }
+            StartAttack(distance);
+            lastAttackTime = Time.time;
         }
     }
 
-    // Editör'de menzilleri görmek için
+    void StartAttack(float distance)
+    {
+        Debug.Log("Zombie " + name + " attack deniyor. Mesafe = " + distance);
+
+        PlayState(AttackStateName);
+
+        // PlayerHealth bul: önce target'ın kendisinde, sonra parent'ında, sonra child'larında
+        PlayerHealth ph = target.GetComponent<PlayerHealth>();
+        if (ph == null) ph = target.GetComponentInParent<PlayerHealth>();
+        if (ph == null) ph = target.GetComponentInChildren<PlayerHealth>();
+
+        if (ph != null)
+        {
+            Debug.Log("Zombie " + name + " hasar verdi: " + attackDamage);
+            ph.TakeDamage(attackDamage);
+        }
+        else
+        {
+            Debug.LogWarning("Zombie " + name + ": PlayerHealth hiçbir yerde bulunamadı (self/parent/child).");
+        }
+
+        // Knockback (istersen)
+        PlayerMovement pm = target.GetComponent<PlayerMovement>();
+        if (pm == null) pm = target.GetComponentInParent<PlayerMovement>();
+        if (pm == null) pm = target.GetComponentInChildren<PlayerMovement>();
+
+        if (pm != null)
+        {
+            Vector3 dir = (target.position - transform.position).normalized;
+            pm.AddImpact(dir, 5f);
+        }
+
+        // Attack animasyonu bittikten sonra tekrar yürümeye dön
+        Invoke(nameof(BackToWalk), 0.6f); // attack klibinin süresine göre ayarla
+    }
+
+
+    void BackToWalk()
+    {
+        if (isDead) return;
+        PlayState(WalkStateName);
+    }
+
+    void PlayState(string stateName)
+    {
+        if (animator == null) return;
+        if (currentState == stateName) return;
+
+        animator.CrossFade(stateName, 0.1f);
+        currentState = stateName;
+    }
+
+    public void Die()
+    {
+        if (isDead) return;
+        isDead = true;
+
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.enabled = false;
+        }
+
+        PlayState(DieStateName);
+
+        Collider col = GetComponent<Collider>();
+        if (col != null)
+            col.enabled = false;
+    }
+
+    // Sahnedeki attackRange i görmek için
     void OnDrawGizmosSelected()
     {
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, stopDistance);
-
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
     }

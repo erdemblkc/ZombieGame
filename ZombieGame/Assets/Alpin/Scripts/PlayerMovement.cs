@@ -5,7 +5,7 @@ public class PlayerMovement : MonoBehaviour
 {
     [Header("Hız Ayarları")]
     public float walkSpeed = 5f;
-    public float runSpeed = 9f; // artık kullanılmıyor
+    public float runSpeed = 9f; // kullanılmıyor ama dursun
 
     [Header("Dash (Shift)")]
     public float dashSpeed = 14f;
@@ -22,17 +22,19 @@ public class PlayerMovement : MonoBehaviour
     [Header("Animasyon")]
     public Animator animator;
 
-    // SENİN Animator state isimlerin
+    // SENİN Animator state isimlerin:
+    // Idle      : Armature|Idle
+    // Walk      : Armature|Walk
+    // Aim Walk  : walk_aim
     private const string IdleStateName = "Armature|Idle";
     private const string WalkStateName = "Armature|Walk";
-    private const string AimIdleStateName = "Armature|AimIdle";
     private const string AimWalkStateName = "walk_aim";
 
     [Header("Model Root (Transform Sabitleme)")]
-    public Transform modelRoot; // Inspector: Model Mesh (Transform)
+    public Transform modelRoot;                // Model Mesh
     public bool lockModelRootTransform = true;
 
-    [Tooltip("Animasyon scale'i bozuyorsa bunu aç ve 500,500,500 gir.")]
+    [Tooltip("Animasyon scale'i bozuyorsa aç ve 500,500,500 gir.")]
     public bool useManualModelScale = false;
     public Vector3 manualModelScale = new Vector3(500f, 500f, 500f);
 
@@ -81,35 +83,46 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         if (animator == null)
+        {
             Debug.LogError("Player: Animator bulunamadı!");
+        }
         else
+        {
             animator.Play(IdleStateName, 0, 0f);
+        }
     }
 
     void Update()
     {
         bool isGrounded = controller.isGrounded;
-        if (isGrounded && velocity.y < 0) velocity.y = -2f;
+        if (isGrounded && velocity.y < 0)
+            velocity.y = -2f;
 
         // Aim
         isAiming = isArmed && Input.GetKey(aimKey);
-        if (animator != null) animator.SetBool("IsAiming", isAiming);
+        if (animator != null)
+            animator.SetBool("IsAiming", isAiming);
 
-        // Input (Move için smooth, isMoving için RAW)
+        // ==========================
+        // INPUT
+        // ==========================
+
+        // Smooth hareket
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
 
+        // Gerçek hareket var mı (tuş basılı mı)
         float hRaw = Input.GetAxisRaw("Horizontal");
         float vRaw = Input.GetAxisRaw("Vertical");
         bool isMoving = (hRaw * hRaw + vRaw * vRaw) > 0.01f;
 
         Vector3 move = transform.right * horizontal + transform.forward * vertical;
-
-        // tuş bırakınca kayma/yanlış moving algısı olmasın
         if (!isMoving)
             move = Vector3.zero;
 
-        // Dash (Shift)
+        // ==========================
+        // DASH
+        // ==========================
         if (!isDashing && Time.time >= nextDashTime && Input.GetKeyDown(KeyCode.LeftShift))
         {
             dashDir = move.sqrMagnitude > 0.001f ? move.normalized : transform.forward;
@@ -124,15 +137,21 @@ public class PlayerMovement : MonoBehaviour
         // Dash hareketi
         if (isDashing)
         {
-            if (Time.time >= dashEndTime) isDashing = false;
-            else controller.Move(dashDir * dashSpeed * Time.deltaTime);
+            if (Time.time >= dashEndTime)
+            {
+                isDashing = false;
+            }
+            else
+            {
+                controller.Move(dashDir * dashSpeed * Time.deltaTime);
+            }
         }
 
-        // Jump
+        // Zıplama
         if (isGrounded && Input.GetButtonDown("Jump"))
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
 
-        // Gravity
+        // Yerçekimi
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
 
@@ -140,37 +159,35 @@ public class PlayerMovement : MonoBehaviour
         if (knockbackVelocity.sqrMagnitude > 0.001f)
         {
             controller.Move(knockbackVelocity * Time.deltaTime);
-            knockbackVelocity = Vector3.Lerp(knockbackVelocity, Vector3.zero, knockbackDamping * Time.deltaTime);
+            knockbackVelocity = Vector3.Lerp(
+                knockbackVelocity,
+                Vector3.zero,
+                knockbackDamping * Time.deltaTime
+            );
         }
 
-        // === ANİMASYON STATE SEÇİMİ ===
+        // ==========================
+        // ANİMASYON STATE SEÇİMİ
+        // ==========================
         if (animator != null)
         {
             string targetState;
-            if (!isMoving)
-                targetState = isAiming ? AimIdleStateName : IdleStateName;
-            else
-                targetState = isAiming ? AimWalkStateName : WalkStateName;
 
-            // AimWalk klibi loop değilse "ilk adım sonra donma"yı engelle (fallback)
-            // (Yine de asıl çözüm: AimWalk clip -> Loop Time ✅)
-            if (targetState == AimWalkStateName && lastState == AimWalkStateName && isMoving && isAiming)
+            if (!isMoving)
             {
-                var st = animator.GetCurrentAnimatorStateInfo(0);
-                if (st.IsName(AimWalkStateName) && st.normalizedTime >= 0.98f)
-                {
-                    var clips = animator.GetCurrentAnimatorClipInfo(0);
-                    if (clips.Length > 0 && clips[0].clip != null && !clips[0].clip.isLooping)
-                    {
-                        animator.CrossFade(AimWalkStateName, 0.05f, 0, 0f); // yeniden başlat
-                    }
-                }
+                // Aim olsa da olmasa da şu an tek idle: silahlı Idle
+                targetState = IdleStateName;
+            }
+            else
+            {
+                // Yürürken aim varsa walk_aim, yoksa normal walk
+                targetState = isAiming ? AimWalkStateName : WalkStateName;
             }
 
             if (targetState != lastState)
             {
-                // Idle'lara girerken poz "walk'tan kalmasın" diye 0'dan başlat
-                if (targetState == IdleStateName || targetState == AimIdleStateName)
+                // Idle’a girerken animasyonu baştan başlat
+                if (targetState == IdleStateName)
                     animator.CrossFade(targetState, 0.1f, 0, 0f);
                 else
                     animator.CrossFade(targetState, 0.1f);
