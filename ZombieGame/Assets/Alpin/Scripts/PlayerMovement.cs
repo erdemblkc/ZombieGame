@@ -19,9 +19,15 @@ public class PlayerMovement : MonoBehaviour
     public float gravity = -9.81f;
     public float jumpHeight = 1.5f;
 
+    [Header("Jetpack")]
+    public bool hasJetpack = false;          // jetpack alınca true olacak
+    public int maxExtraJumps = 1;            // double jump = 1 ekstra zıplama
+    public float secondJumpHeight = 1.5f;    // jetpack zıplama yüksekliği
+    public float glideGravityMultiplier = 0.3f; // süzülürken yerçekimi çarpanı
+    public float maxGlideFallSpeed = -4f;       // süzülürken max düşüş hızı
+
     [Header("Animasyon")]
     public Animator animator;
-
     // SENİN Animator state isimlerin:
     // Idle      : Armature|Idle
     // Walk      : Armature|Walk
@@ -33,11 +39,9 @@ public class PlayerMovement : MonoBehaviour
     [Header("Model Root (Transform Sabitleme)")]
     public Transform modelRoot;                // Model Mesh
     public bool lockModelRootTransform = true;
-
     [Tooltip("Animasyon scale'i bozuyorsa aç ve 500,500,500 gir.")]
     public bool useManualModelScale = false;
     public Vector3 manualModelScale = new Vector3(500f, 500f, 500f);
-
     private Vector3 modelRootLockedScale;
     private Vector3 modelRootLockedPos;
     private Quaternion modelRootLockedRot;
@@ -59,6 +63,11 @@ public class PlayerMovement : MonoBehaviour
     private float nextDashTime;
     private Vector3 dashDir;
 
+    // Jetpack internal
+    private int extraJumpsLeft;
+    private bool isGliding;
+    private bool isGrounded;
+
     // Anim state kontrol
     private string lastState = "";
 
@@ -78,6 +87,8 @@ public class PlayerMovement : MonoBehaviour
             modelRootLockedPos = modelRoot.localPosition;
             modelRootLockedRot = modelRoot.localRotation;
         }
+
+        extraJumpsLeft = maxExtraJumps;
     }
 
     void Start()
@@ -94,9 +105,15 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        bool isGrounded = controller.isGrounded;
+        isGrounded = controller.isGrounded;
+
         if (isGrounded && velocity.y < 0)
+        {
             velocity.y = -2f;
+            // yere değdiğimiz anda jetpack ekstra zıplama haklarını yenile
+            extraJumpsLeft = maxExtraJumps;
+            isGliding = false;
+        }
 
         // Aim
         isAiming = isArmed && Input.GetKey(aimKey);
@@ -106,7 +123,6 @@ public class PlayerMovement : MonoBehaviour
         // ==========================
         // INPUT
         // ==========================
-
         // Smooth hareket
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
@@ -147,12 +163,53 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        // Zıplama
-        if (isGrounded && Input.GetButtonDown("Jump"))
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        // ==========================
+        // Zıplama + Jetpack Double Jump
+        // ==========================
+        if (Input.GetButtonDown("Jump"))
+        {
+            if (isGrounded)
+            {
+                // Normal ilk zıplama
+                velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                isGliding = false;
+            }
+            else if (hasJetpack && extraJumpsLeft > 0)
+            {
+                // Jetpack ile ikinci zıplama
+                velocity.y = Mathf.Sqrt(secondJumpHeight * -2f * gravity);
+                extraJumpsLeft--;
+                isGliding = false;
+            }
+        }
 
-        // Yerçekimi
-        velocity.y += gravity * Time.deltaTime;
+        // ==========================
+        // Glide (havada süzülme)
+        // ==========================
+        bool canGlide = hasJetpack &&
+                        !isGrounded &&
+                        velocity.y < 0f &&
+                        Input.GetButton("Jump"); // Space basılı tutuluyorsa
+
+        if (canGlide)
+        {
+            isGliding = true;
+
+            // Yerçekimini azalt
+            velocity.y += gravity * glideGravityMultiplier * Time.deltaTime;
+
+            // Düşüş hızını sınırla
+            if (velocity.y < maxGlideFallSpeed)
+                velocity.y = maxGlideFallSpeed;
+        }
+        else
+        {
+            isGliding = false;
+            // Normal yerçekimi
+            velocity.y += gravity * Time.deltaTime;
+        }
+
+        // Dikey hareket
         controller.Move(velocity * Time.deltaTime);
 
         // Knockback
@@ -172,7 +229,6 @@ public class PlayerMovement : MonoBehaviour
         if (animator != null)
         {
             string targetState;
-
             if (!isMoving)
             {
                 // Aim olsa da olmasa da şu an tek idle: silahlı Idle
@@ -223,5 +279,15 @@ public class PlayerMovement : MonoBehaviour
     public void SetArmed(bool armed)
     {
         isArmed = armed;
+    }
+
+    // Jetpack pickup buradan çağıracak
+    public void SetHasJetpack(bool value)
+    {
+        hasJetpack = value;
+        if (hasJetpack)
+        {
+            extraJumpsLeft = maxExtraJumps;
+        }
     }
 }
