@@ -4374,6 +4374,10 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5973078862801045446, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6078904944417692399, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
       propertyPath: currentHealth
       value: 100
@@ -4392,7 +4396,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7663816699058293811, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
       propertyPath: m_Name
-      value: Player
+      value: Old Player
       objectReference: {fileID: 0}
     - target: {fileID: 7663816699058293811, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
       propertyPath: m_IsActive
@@ -4400,6 +4404,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7693761172582771296, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
       propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990900246773961713, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
+      propertyPath: field of view
+      value: 60.000004
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990900246773961713, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
+      propertyPath: m_FocalLength
+      value: 20.78461
+      objectReference: {fileID: 0}
+    - target: {fileID: 8990900246773961713, guid: 22d2d9adce978f347a04a897e5e771ff, type: 3}
+      propertyPath: m_projectionMatrixMode
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []

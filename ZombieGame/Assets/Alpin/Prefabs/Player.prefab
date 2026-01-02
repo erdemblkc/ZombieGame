@@ -163,6 +163,11 @@ MonoBehaviour:
   aimKey: 324
   gravity: -9.81
   jumpHeight: 1.5
+  hasJetpack: 0
+  maxExtraJumps: 1
+  secondJumpHeight: 1.5
+  glideGravityMultiplier: 0.3
+  maxGlideFallSpeed: -4
   animator: {fileID: 1977892086103274704}
   modelRoot: {fileID: 0}
   lockModelRootTransform: 1
@@ -228,7 +233,7 @@ Camera:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7693761172582771296}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_ClearFlags: 1
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
