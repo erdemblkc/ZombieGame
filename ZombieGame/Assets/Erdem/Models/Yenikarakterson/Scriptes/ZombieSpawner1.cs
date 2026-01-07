@@ -3,74 +3,105 @@ using UnityEngine.AI;
 
 public class ZombieSpawner1 : MonoBehaviour
 {
-    [Header("Prefab")]
-    public GameObject zombiePrefab;
+    [Header("Prefab & Target")]
+    public GameObject zombiePrefab;      // ZombieRoot prefab
+    public Transform player;
 
-    [Header("Spawn Area (Box)")]
-    public Transform spawnArea;          // ZombieSpawnArea
-    public Vector3 areaSize = new Vector3(50f, 1f, 50f); // XZ önemli
+    [Header("Spawn Count")]
+    public int count = 15;
 
-    [Header("Count")]
-    public int spawnCount = 15;
+    [Header("Spawn Area (Plane Collider)")]
+    public Collider spawnAreaCollider;   // TestGround'un collider'ý (MeshCollider)
 
-    [Header("NavMesh")]
-    public float navmeshSearchRadius = 8f;
-    public int maxTriesPerZombie = 30;
+    [Header("Distance Rules")]
+    public float minDistanceFromPlayer = 6f;
+
+    [Header("NavMesh Sampling")]
+    public float sampleMaxDistance = 8f; // Candidate noktanýn yakýnýnda navmesh arama mesafesi
+    public int triesPerZombie = 40;
 
     void Start()
     {
-        SpawnWave();
+        if (player == null)
+        {
+            GameObject p = GameObject.FindGameObjectWithTag("Player");
+            if (p != null) player = p.transform;
+        }
+
+        SpawnAll();
     }
 
-    [ContextMenu("Spawn Wave")]
-    public void SpawnWave()
+    void SpawnAll()
     {
         if (zombiePrefab == null)
         {
-            Debug.LogError("ZombieSpawner1: zombiePrefab not assigned.");
+            Debug.LogError("ZombieSpawner: zombiePrefab atanmadý!");
             return;
         }
-        if (spawnArea == null) spawnArea = transform;
 
-        for (int i = 0; i < spawnCount; i++)
+        if (player == null)
         {
-            bool spawned = TrySpawnOne(i);
-            if (!spawned)
-                Debug.LogWarning($"ZombieSpawner1: Failed to spawn zombie #{i} (no navmesh point found).");
+            Debug.LogError("ZombieSpawner: player bulunamadý! Player Tag=Player olmalý.");
+            return;
         }
-    }
 
-    bool TrySpawnOne(int index)
-    {
-        for (int t = 0; t < maxTriesPerZombie; t++)
+        if (spawnAreaCollider == null)
         {
-            Vector3 randomWorld = GetRandomPointInBox(spawnArea.position, areaSize);
+            Debug.LogError("ZombieSpawner: spawnAreaCollider atanmadý! TestGround collider'ýný sürükle-býrak yap.");
+            return;
+        }
 
-            if (NavMesh.SamplePosition(randomWorld, out NavMeshHit hit, navmeshSearchRadius, NavMesh.AllAreas))
+        for (int i = 0; i < count; i++)
+        {
+            Vector3 pos = FindSpawnPoint();
+
+            GameObject z = Instantiate(zombiePrefab, pos, Quaternion.identity);
+
+            // Zombiye player hedefini ver
+            var ai = z.GetComponent<ZombieAI_Follow>();
+            if (ai != null)
             {
-                // Biraz yukarýdan koyup navmesh'e oturtuyoruz
-                Vector3 pos = hit.position + Vector3.up * 0.02f;
+                ai.target = player;
+                ai.chaseRange = 999f; // testte kesin takip etsin
+            }
 
-                Instantiate(zombiePrefab, pos, Quaternion.identity);
-                return true;
+            // Agent'ý navmesh üstüne garanti oturt (bazý durumlarda ilk framede lazým oluyor)
+            var agent = z.GetComponent<NavMeshAgent>();
+            if (agent != null)
+            {
+                agent.Warp(pos);
             }
         }
-        return false;
     }
 
-    Vector3 GetRandomPointInBox(Vector3 center, Vector3 size)
+    Vector3 FindSpawnPoint()
     {
-        // Y'yi center'dan alýyoruz; asýl random XZ
-        float x = Random.Range(-size.x * 0.5f, size.x * 0.5f);
-        float z = Random.Range(-size.z * 0.5f, size.z * 0.5f);
-        return new Vector3(center.x + x, center.y, center.z + z);
-    }
+        Bounds b = spawnAreaCollider.bounds;
 
-    void OnDrawGizmosSelected()
-    {
-        if (spawnArea == null) spawnArea = transform;
+        for (int t = 0; t < triesPerZombie; t++)
+        {
+            // Plane'in her yerinden rastgele XZ seç
+            float x = Random.Range(b.min.x, b.max.x);
+            float z = Random.Range(b.min.z, b.max.z);
 
-        Gizmos.color = new Color(0f, 1f, 0f, 0.25f);
-        Gizmos.DrawWireCube(spawnArea.position, areaSize);
+            // Yukarýdan örnekle (navmesh'e oturtacaðýz)
+            Vector3 candidate = new Vector3(x, b.max.y + 2f, z);
+
+            // player'a çok yakýn olmasýn (XZ)
+            Vector3 flatPlayer = player.position; flatPlayer.y = 0f;
+            Vector3 flatCand = candidate; flatCand.y = 0f;
+            if (Vector3.Distance(flatCand, flatPlayer) < minDistanceFromPlayer)
+                continue;
+
+            // NavMesh üstüne oturt
+            if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, sampleMaxDistance, NavMesh.AllAreas))
+            {
+                return hit.position;
+            }
+        }
+
+        // Olmazsa: collider merkezine yakýn bir yer
+        NavMesh.SamplePosition(b.center, out NavMeshHit centerHit, 20f, NavMesh.AllAreas);
+        return centerHit.position;
     }
 }

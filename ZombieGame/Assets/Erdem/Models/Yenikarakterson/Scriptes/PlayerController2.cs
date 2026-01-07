@@ -7,13 +7,32 @@ public class PlayerController2 : MonoBehaviour
     public Transform cameraPivot; // Main Camera (head altında)
 
     [Header("Movement")]
-    public float moveSpeed = 4.5f;
+    public float moveSpeed = 6.5f;
     public float gravity = -18f;
+
+    [Header("Sprint (Shift)")]
+    public KeyCode sprintKey = KeyCode.LeftShift;
+    public float sprintSpeed = 9.5f;
+    public float maxEnergy = 10f;
+    public float energyDrainPerSec = 2.5f;
+    public float energyRefillTime = 5f;
+    public float sprintExhaustLockTime = 3f;  // enerji bitince sprint kilidi
+
+    [Header("Jump")]
+    public float jumpHeight = 1.3f;
+    public float groundedStickForce = -2f;
+
+    [Header("Dash (E)")]
+    public KeyCode dashKey = KeyCode.E;
+    public float dashSpeed = 14f;
+    public float dashDuration = 0.18f;
+    public float dashCooldown = 0.9f;
+    public bool dashOnlyForward = false;
 
     [Header("Mouse Look")]
     public float mouseSensitivityX = 1.0f;
     public float mouseSensitivityY = 0.6f;
-    public float aimSensitivityY = 0.25f; // SADECE aim'de Y daha yavaş
+    public float aimSensitivityY = 0.25f;
     public float pitchMin = -85f;
     public float pitchMax = 85f;
 
@@ -23,10 +42,10 @@ public class PlayerController2 : MonoBehaviour
     public string shootParam = "Shoot";
 
     [Header("Aim Pitch Bone")]
-    public Transform upperBodyBone;                 // Chest / UpperChest / Spine
-    public float upperBodyPitchMultiplier = 1.0f;   // sen 5 kullanıyorsan Inspector'dan 5 yap
-    public float upperBodyPitchSmoothing = 30f;     // sen 50 kullanıyorsan Inspector'dan 50 yap
-    public float upperBodyPitchClamp = 80f;         // aşırı kırılmayı önler
+    public Transform upperBodyBone;
+    public float upperBodyPitchMultiplier = 1.0f;
+    public float upperBodyPitchSmoothing = 30f;
+    public float upperBodyPitchClamp = 80f;
 
     private CharacterController cc;
     private Animator anim;
@@ -35,10 +54,21 @@ public class PlayerController2 : MonoBehaviour
     private Vector3 verticalVel;
     private Quaternion upperBodyDefaultLocalRot;
 
-    // Aim "snap" fix için
+    // Aim "snap" fix
     private bool wasAiming;
     private float aimPitchStart;
     private Quaternion aimBoneStartRot;
+
+    // Dash state
+    private bool isDashing;
+    private float dashTimer;
+    private float nextDashTime;
+
+    // Energy / Sprint state
+    private float currentEnergy;
+    public float CurrentEnergy => currentEnergy; // UI için
+    public float MaxEnergy => maxEnergy;         // UI için
+    private float sprintLockTimer;               // sprint kilidi
 
     void Awake()
     {
@@ -54,17 +84,24 @@ public class PlayerController2 : MonoBehaviour
         if (upperBodyBone != null)
             upperBodyDefaultLocalRot = upperBodyBone.localRotation;
 
+        currentEnergy = maxEnergy;
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
     void Update()
     {
-        // ✅ Sıra önemli: önce aim bool güncellensin
         HandleAimAndShoot();
         HandleMouseLook();
+
+        HandleDash();
         HandleMovement();
         ApplyAimPitchToUpperBody();
+
+        // sprint kilit süresi sayacı
+        if (sprintLockTimer > 0f)
+            sprintLockTimer -= Time.deltaTime;
     }
 
     void HandleMouseLook()
@@ -76,10 +113,8 @@ public class PlayerController2 : MonoBehaviour
         float mx = Input.GetAxis("Mouse X") * mouseSensitivityX;
         float my = Input.GetAxis("Mouse Y") * (isAiming ? aimSensitivityY : mouseSensitivityY);
 
-        // Yaw: karakteri döndür
         transform.Rotate(0f, mx, 0f);
 
-        // Pitch: kamerayı döndür
         pitch -= my;
         pitch = Mathf.Clamp(pitch, pitchMin, pitchMax);
         cameraPivot.localRotation = Quaternion.Euler(pitch, 0f, 0f);
@@ -96,24 +131,94 @@ public class PlayerController2 : MonoBehaviour
         }
     }
 
+    void HandleDash()
+    {
+        if (isDashing)
+        {
+            dashTimer -= Time.deltaTime;
+            if (dashTimer <= 0f)
+                isDashing = false;
+
+            return;
+        }
+
+        if (Input.GetKeyDown(dashKey) && Time.time >= nextDashTime)
+        {
+            isDashing = true;
+            dashTimer = dashDuration;
+            nextDashTime = Time.time + dashCooldown;
+        }
+    }
+
     void HandleMovement()
     {
-        float x = Input.GetAxisRaw("Horizontal"); // A/D
-        float z = Input.GetAxisRaw("Vertical");   // W/S
+        float x = Input.GetAxisRaw("Horizontal");
+        float z = Input.GetAxisRaw("Vertical");
 
         Vector3 input = new Vector3(x, 0f, z);
         input = Vector3.ClampMagnitude(input, 1f);
 
         Vector3 moveDir = (transform.right * input.x + transform.forward * input.z);
-        Vector3 move = moveDir * moveSpeed;
 
-        // Gravity
-        if (cc.isGrounded) verticalVel.y = -1f;
-        else verticalVel.y += gravity * Time.deltaTime;
+        // Gravity + Jump
+        if (cc.isGrounded)
+        {
+            if (verticalVel.y < 0f) verticalVel.y = groundedStickForce;
 
+            if (Input.GetKeyDown(KeyCode.Space))
+                verticalVel.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
+        else
+        {
+            verticalVel.y += gravity * Time.deltaTime;
+        }
+
+        // DASH (öncelikli)
+        if (isDashing)
+        {
+            Vector3 dashDir = dashOnlyForward
+                ? transform.forward
+                : (moveDir.sqrMagnitude > 0.001f ? moveDir : transform.forward);
+
+            dashDir.Normalize();
+
+            cc.Move((dashDir * dashSpeed + verticalVel) * Time.deltaTime);
+
+            if (anim) anim.SetFloat(speedParam, 1f);
+            return;
+        }
+
+        // -------- SPRINT + ENERGY (fix: enerji biter bitmez sprint kes) --------
+        bool wantsSprint = Input.GetKey(sprintKey);
+        bool isMoving = input.magnitude > 0.01f;
+
+        // ilk hesap
+        bool isSprinting = wantsSprint && isMoving && sprintLockTimer <= 0f && currentEnergy > 0.01f;
+
+        if (isSprinting)
+        {
+            currentEnergy -= energyDrainPerSec * Time.deltaTime;
+
+            if (currentEnergy <= 0f)
+            {
+                currentEnergy = 0f;
+                sprintLockTimer = sprintExhaustLockTime;
+                isSprinting = false; // ✅ aynı frame sprint kapansın
+            }
+        }
+        else
+        {
+            float regenPerSec = (energyRefillTime <= 0.001f) ? 999f : (maxEnergy / energyRefillTime);
+            currentEnergy += regenPerSec * Time.deltaTime;
+            if (currentEnergy > maxEnergy) currentEnergy = maxEnergy;
+        }
+
+        float speed = isSprinting ? sprintSpeed : moveSpeed;
+
+        // Move
+        Vector3 move = moveDir * speed;
         cc.Move((move + verticalVel) * Time.deltaTime);
 
-        // Animator Speed
         if (anim) anim.SetFloat(speedParam, input.magnitude);
     }
 
@@ -123,14 +228,12 @@ public class PlayerController2 : MonoBehaviour
 
         bool isAiming = anim.GetBool(aimingParam);
 
-        // ✅ Aim'e bu frame girdiysek: referansı kilitle (snap olmasın)
         if (isAiming && !wasAiming)
         {
-            aimPitchStart = pitch;                      // o anki kamera pitch
-            aimBoneStartRot = upperBodyBone.localRotation; // o anki kemik rotu
+            aimPitchStart = pitch;
+            aimBoneStartRot = upperBodyBone.localRotation;
         }
 
-        // Aim yokken: kemiği eski haline döndür
         if (!isAiming)
         {
             upperBodyBone.localRotation = Quaternion.Slerp(
@@ -143,14 +246,10 @@ public class PlayerController2 : MonoBehaviour
             return;
         }
 
-        // Aim varken: başlangıca göre delta uygula (baktığın yer sabit kalır)
         float deltaPitch = pitch - aimPitchStart;
 
         float applied = deltaPitch * upperBodyPitchMultiplier;
         applied = Mathf.Clamp(applied, -upperBodyPitchClamp, upperBodyPitchClamp);
-
-        // Yön ters gelirse:
-        // applied = -applied;
 
         Quaternion target = aimBoneStartRot * Quaternion.Euler(applied, 0f, 0f);
 

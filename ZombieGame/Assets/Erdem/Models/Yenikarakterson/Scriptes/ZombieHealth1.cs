@@ -1,22 +1,38 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class ZombieHealth1 : MonoBehaviour, IDamageable
 {
     [Header("Health")]
     public float maxHealth = 100f;
-    public float currentHealth;
+    public float currentHealth = 100f;
 
-    [Header("Death")]
-    public bool destroyOnDeath = true;
-    public float destroyDelay = 2f;
+    [Header("Animation")]
+    public Animator animator;
+    public string dieTrigger = "Die";
 
-    private Animator anim;
+    [Header("Death Timing")]
+    [Tooltip("Die anim bitince yerde kaç saniye kalsýn?")]
+    public float stayOnGroundTime = 0.6f;
+
+    [Tooltip("Die anim klibinin süresi. 0 býrakýlýrsa despawnDelay kullanýlýr.")]
+    public float dieAnimDuration = 0f;
+
+    [Tooltip("dieAnimDuration=0 ise toplam bekleme (anim + yerde kalma) yerine direkt bu kullanýlýr.")]
+    public float despawnDelay = 1.2f;
+
+    [Header("Death Options")]
+    public bool disableCollidersOnDeath = true;
+
     private bool isDead;
 
     void Awake()
     {
+        if (animator == null)
+            animator = GetComponentInChildren<Animator>();
+
         currentHealth = maxHealth;
-        anim = GetComponentInChildren<Animator>();
     }
 
     public void TakeDamage(float amount)
@@ -24,7 +40,6 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
         if (isDead) return;
 
         currentHealth -= amount;
-        Debug.Log($"{name} took {amount} damage. HP: {currentHealth}");
 
         if (currentHealth <= 0f)
             Die();
@@ -34,14 +49,49 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
     {
         isDead = true;
 
-        Debug.Log($"{name} DIED!");
+        // AI/Agent kapat
+        var ai = GetComponent<ZombieAI_Follow>();
+        if (ai != null) ai.enabled = false;
 
-        // Collider’larý kapat ki artýk mermi çarpmasýn
-        foreach (var col in GetComponentsInChildren<Collider>())
-            col.enabled = false;
+        var agent = GetComponent<NavMeshAgent>();
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+            agent.enabled = false;
+        }
 
-        // Ýleride anim ekleyeceðiz (þimdilik sadece destroy)
-        if (destroyOnDeath)
-            Destroy(gameObject, destroyDelay);
+        // Colliders kapat
+        if (disableCollidersOnDeath)
+        {
+            foreach (var col in GetComponentsInChildren<Collider>())
+                col.enabled = false;
+        }
+
+        // Die anim
+        if (animator != null && animator.runtimeAnimatorController != null)
+        {
+            animator.ResetTrigger(dieTrigger);
+            animator.SetTrigger(dieTrigger);
+        }
+
+        StartCoroutine(DespawnRoutine());
+    }
+
+    IEnumerator DespawnRoutine()
+    {
+        float wait;
+
+        if (dieAnimDuration > 0f)
+        {
+            wait = dieAnimDuration + stayOnGroundTime;
+        }
+        else
+        {
+            wait = despawnDelay;
+        }
+
+        yield return new WaitForSeconds(wait);
+        Destroy(gameObject);
     }
 }
