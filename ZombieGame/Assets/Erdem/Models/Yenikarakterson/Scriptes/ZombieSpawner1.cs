@@ -1,76 +1,169 @@
+ï»¿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class ZombieSpawner1 : MonoBehaviour
 {
     [Header("Prefab & Target")]
-    public GameObject zombiePrefab;      // ZombieRoot prefab
+    public GameObject zombiePrefab;
     public Transform player;
 
-    [Header("Spawn Count")]
-    public int count = 15;
-
     [Header("Spawn Area (Plane Collider)")]
-    public Collider spawnAreaCollider;   // TestGround'un collider'ý (MeshCollider)
+    public Collider spawnAreaCollider;
 
     [Header("Distance Rules")]
     public float minDistanceFromPlayer = 6f;
 
     [Header("NavMesh Sampling")]
-    public float sampleMaxDistance = 8f; // Candidate noktanýn yakýnýnda navmesh arama mesafesi
+    public float sampleMaxDistance = 8f;
     public int triesPerZombie = 40;
+
+    [Header("Waves")]
+    public int wave1Count = 10;
+    public int wave2Count = 10;
+    public float nextWaveDelay = 2f;
+
+    [Header("Wave 2 Buff")]
+    public float wave2SpeedMultiplier = 1.35f;
+    public float wave2DamageMultiplier = 1.4f;
+    public float wave2HealthMultiplier = 1.25f;
+
+    [Header("Alive Check")]
+    public float aliveCheckInterval = 0.5f;
+
+    [Header("Debug")]
+    public bool debugLogs = true;
+
+    private readonly List<GameObject> aliveZombies = new List<GameObject>();
+    private int currentWave = 0;
+    private float nextAliveCheckTime = 0f;
+    private bool waitingNextWave = false;
+
+    void Awake()
+    {
+        // âœ… Sahnedeki tÃ¼m spawner'larÄ± say (disable olanlar dahil)
+        var all = FindObjectsOfType<ZombieSpawner1>(true);
+        Debug.Log($"[Spawner-Awake] Found ZombieSpawner1 count = {all.Length}. This = {gameObject.name} (id:{GetInstanceID()})", this);
+
+        // âœ… Prefab referansÄ±nÄ± daha baÅŸtan yazdÄ±r
+        Debug.Log($"[Spawner-Awake] {gameObject.name} prefab = {(zombiePrefab ? zombiePrefab.name : "NULL")}", this);
+    }
 
     void Start()
     {
+        // player otomatik bul
         if (player == null)
         {
             GameObject p = GameObject.FindGameObjectWithTag("Player");
             if (p != null) player = p.transform;
         }
 
-        SpawnAll();
+        Debug.Log($"[Spawner-Start] {gameObject.name} (id:{GetInstanceID()}) prefab={(zombiePrefab ? zombiePrefab.name : "NULL")} spawnArea={(spawnAreaCollider ? spawnAreaCollider.name : "NULL")} player={(player ? player.name : "NULL")}", this);
+
+        SpawnWave(1);
     }
 
-    void SpawnAll()
+    void Update()
     {
+        if (currentWave == 0) return;
+
+        if (Time.time < nextAliveCheckTime) return;
+        nextAliveCheckTime = Time.time + aliveCheckInterval;
+
+        for (int i = aliveZombies.Count - 1; i >= 0; i--)
+        {
+            if (aliveZombies[i] == null)
+                aliveZombies.RemoveAt(i);
+        }
+
+        if (aliveZombies.Count == 0 && !waitingNextWave)
+        {
+            if (currentWave == 1)
+            {
+                waitingNextWave = true;
+                StartCoroutine(SpawnNextWaveAfterDelay(2));
+            }
+        }
+    }
+
+    System.Collections.IEnumerator SpawnNextWaveAfterDelay(int waveNumber)
+    {
+        if (debugLogs) Debug.Log($"[Spawner] {gameObject.name} Wave {currentWave} cleared. Spawning Wave {waveNumber} in {nextWaveDelay}s...", this);
+        yield return new WaitForSeconds(nextWaveDelay);
+
+        SpawnWave(waveNumber);
+        waitingNextWave = false;
+    }
+
+    void SpawnWave(int waveNumber)
+    {
+        // âœ… Hata mesajÄ±na objenin adÄ±nÄ± + id'yi ekledim
         if (zombiePrefab == null)
         {
-            Debug.LogError("ZombieSpawner: zombiePrefab atanmadý!");
+            Debug.LogError($"ZombieSpawner: zombiePrefab atanmadÄ±! -> {gameObject.name} (id:{GetInstanceID()})", this);
             return;
         }
 
         if (player == null)
         {
-            Debug.LogError("ZombieSpawner: player bulunamadý! Player Tag=Player olmalý.");
+            Debug.LogError($"ZombieSpawner: player bulunamadÄ±! -> {gameObject.name} (id:{GetInstanceID()})", this);
             return;
         }
 
         if (spawnAreaCollider == null)
         {
-            Debug.LogError("ZombieSpawner: spawnAreaCollider atanmadý! TestGround collider'ýný sürükle-býrak yap.");
+            Debug.LogError($"ZombieSpawner: spawnAreaCollider atanmadÄ±! -> {gameObject.name} (id:{GetInstanceID()})", this);
             return;
         }
+
+        currentWave = waveNumber;
+        aliveZombies.Clear();
+
+        int count = (waveNumber == 1) ? wave1Count : wave2Count;
+
+        if (debugLogs) Debug.Log($"[Spawner] {gameObject.name} Spawning Wave {waveNumber} : {count} zombies", this);
 
         for (int i = 0; i < count; i++)
         {
             Vector3 pos = FindSpawnPoint();
-
             GameObject z = Instantiate(zombiePrefab, pos, Quaternion.identity);
+            aliveZombies.Add(z);
 
-            // Zombiye player hedefini ver
             var ai = z.GetComponent<ZombieAI_Follow>();
             if (ai != null)
             {
                 ai.target = player;
-                ai.chaseRange = 999f; // testte kesin takip etsin
+                ai.chaseRange = 999f;
             }
 
-            // Agent'ý navmesh üstüne garanti oturt (bazý durumlarda ilk framede lazým oluyor)
             var agent = z.GetComponent<NavMeshAgent>();
-            if (agent != null)
-            {
-                agent.Warp(pos);
-            }
+            if (agent != null) agent.Warp(pos);
+
+            if (waveNumber == 2)
+                ApplyWave2Buff(z);
+        }
+    }
+
+    void ApplyWave2Buff(GameObject z)
+    {
+        var agent = z.GetComponent<NavMeshAgent>();
+        if (agent != null)
+        {
+            agent.speed *= wave2SpeedMultiplier;
+            agent.acceleration *= wave2SpeedMultiplier;
+        }
+
+        var atk = z.GetComponent<ZombieAttackDamageTimed>();
+        if (atk != null)
+        {
+            atk.damage *= wave2DamageMultiplier;
+        }
+
+        var hp = z.GetComponent<ZombieHealth1>();
+        if (hp != null)
+        {
+            hp.maxHealth *= wave2HealthMultiplier;
+            hp.currentHealth = hp.maxHealth;
         }
     }
 
@@ -80,27 +173,20 @@ public class ZombieSpawner1 : MonoBehaviour
 
         for (int t = 0; t < triesPerZombie; t++)
         {
-            // Plane'in her yerinden rastgele XZ seç
             float x = Random.Range(b.min.x, b.max.x);
             float z = Random.Range(b.min.z, b.max.z);
 
-            // Yukarýdan örnekle (navmesh'e oturtacaðýz)
             Vector3 candidate = new Vector3(x, b.max.y + 2f, z);
 
-            // player'a çok yakýn olmasýn (XZ)
             Vector3 flatPlayer = player.position; flatPlayer.y = 0f;
             Vector3 flatCand = candidate; flatCand.y = 0f;
             if (Vector3.Distance(flatCand, flatPlayer) < minDistanceFromPlayer)
                 continue;
 
-            // NavMesh üstüne oturt
             if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, sampleMaxDistance, NavMesh.AllAreas))
-            {
                 return hit.position;
-            }
         }
 
-        // Olmazsa: collider merkezine yakýn bir yer
         NavMesh.SamplePosition(b.center, out NavMeshHit centerHit, 20f, NavMesh.AllAreas);
         return centerHit.position;
     }

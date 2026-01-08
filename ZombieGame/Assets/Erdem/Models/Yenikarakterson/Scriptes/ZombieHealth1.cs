@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -13,13 +13,13 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
     public string dieTrigger = "Die";
 
     [Header("Death Timing")]
-    [Tooltip("Die anim bitince yerde kaç saniye kalsýn?")]
+    [Tooltip("Die anim bitince yerde kaÃ§ saniye kalsÄ±n?")]
     public float stayOnGroundTime = 0.6f;
 
-    [Tooltip("Die anim klibinin süresi. 0 býrakýlýrsa despawnDelay kullanýlýr.")]
+    [Tooltip("Die anim klibinin sÃ¼resi. 0 bÄ±rakÄ±lÄ±rsa despawnDelay kullanÄ±lÄ±r.")]
     public float dieAnimDuration = 0f;
 
-    [Tooltip("dieAnimDuration=0 ise toplam bekleme (anim + yerde kalma) yerine direkt bu kullanýlýr.")]
+    [Tooltip("dieAnimDuration=0 ise toplam bekleme (anim + yerde kalma) yerine direkt bu kullanÄ±lÄ±r.")]
     public float despawnDelay = 1.2f;
 
     [Header("Death Options")]
@@ -83,13 +83,9 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
         float wait;
 
         if (dieAnimDuration > 0f)
-        {
             wait = dieAnimDuration + stayOnGroundTime;
-        }
         else
-        {
             wait = despawnDelay;
-        }
 
         yield return new WaitForSeconds(wait);
         Destroy(gameObject);

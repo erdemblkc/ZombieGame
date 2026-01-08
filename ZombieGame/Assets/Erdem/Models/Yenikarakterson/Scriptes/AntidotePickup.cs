@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class AntidotePickup : MonoBehaviour
 {
@@ -6,7 +6,7 @@ public class AntidotePickup : MonoBehaviour
     public KeyCode useKey = KeyCode.T;
     public float useRange = 2.0f;
 
-    [Header("Antidote")]
+    [Header("Consume")]
     public bool consumeOnUse = true;
 
     [Header("Refs (optional)")]
@@ -34,10 +34,10 @@ public class AntidotePickup : MonoBehaviour
 
         if (Input.GetKeyDown(useKey))
         {
-            _infection.UseAntidote();
+            _infection.ResetInfection(); // ✅ direkt 0
 
             if (consumeOnUse)
-                gameObject.SetActive(false); // ister Destroy(gameObject) da yapabilirsin
+                gameObject.SetActive(false);
         }
     }
 }

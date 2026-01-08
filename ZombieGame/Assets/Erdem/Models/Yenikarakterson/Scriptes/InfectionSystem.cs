@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System;
 
 public class InfectionSystem : MonoBehaviour
@@ -7,19 +7,14 @@ public class InfectionSystem : MonoBehaviour
     [Range(0f, 100f)] public float infection = 0f;
     public float maxInfection = 100f;
 
-    [Tooltip("100'e kaç saniyede ulaþsýn? (3 dk = 180 sn)")]
-    public float timeToMaxSeconds = 180f;
+    [Tooltip("Zamanla 100'e kaÃ§ saniyede ulaÅŸsÄ±n? (Ã–rn 600 = 10 dk)")]
+    public float timeToMaxSeconds = 600f; // âœ… daha yavaÅŸ: 10 dakika
 
-    [Tooltip("Hasar yedikçe eklenecek yüzde")]
+    [Tooltip("Hasar yedikÃ§e eklenecek yÃ¼zde (sabit kalsÄ±n: 10)")]
     public float increaseOnHit = 10f;
-
-    [Header("Antidote")]
-    [Tooltip("Panzehir kullanýnca azalacak yüzde")]
-    public float decreaseOnAntidote = 25f;
 
     public bool isDead = false;
 
-    // UI baðlayýnca kullanacaðýz
     public Action<float> OnInfectionChanged; // 0..1
 
     void Start()
@@ -32,21 +27,15 @@ public class InfectionSystem : MonoBehaviour
     {
         if (isDead) return;
 
-        // Zamanla artýþ: 0->100, timeToMaxSeconds sürede
-        float perSecond = maxInfection / timeToMaxSeconds;
+        // âœ… Zamanla daha yavaÅŸ artÄ±ÅŸ
+        float perSecond = (timeToMaxSeconds <= 0.001f) ? 0f : (maxInfection / timeToMaxSeconds);
         AddInfection(perSecond * Time.deltaTime);
     }
 
     public void OnPlayerDamaged()
     {
         if (isDead) return;
-        AddInfection(increaseOnHit);
-    }
-
-    public void UseAntidote()
-    {
-        if (isDead) return;
-        AddInfection(-decreaseOnAntidote);
+        AddInfection(increaseOnHit); // âœ… sabit +10
     }
 
     public void AddInfection(float amount)
@@ -57,19 +46,21 @@ public class InfectionSystem : MonoBehaviour
         BroadcastUI();
 
         if (infection >= maxInfection)
-        {
             DieFromInfection();
-        }
+    }
+
+    // âœ… KÃ¼p alÄ±nca direkt sÄ±fÄ±rla
+    public void ResetInfection()
+    {
+        if (isDead) return;
+        infection = 0f;
+        BroadcastUI();
     }
 
     void DieFromInfection()
     {
         isDead = true;
         Debug.Log("Player died from infection!");
-
-        // Buraya kendi ölüm sistemini baðlayacaðýz:
-        // GetComponent<PlayerHealth>()?.Die();
-        // veya GameManager.RestartLevel();
     }
 
     void BroadcastUI()
