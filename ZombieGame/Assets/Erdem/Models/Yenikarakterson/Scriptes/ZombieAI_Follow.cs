@@ -37,13 +37,17 @@ public class ZombieAI_Follow : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         agent.autoBraking = true;
-        agent.stoppingDistance = 0f; // durmayý biz kontrol ediyoruz
+        agent.stoppingDistance = 0f;
 
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
 
         if (visual == null && transform.childCount > 0)
             visual = transform.GetChild(0);
+
+        // Uyarý
+        if (GetComponent<ZombieAttackDamageTimed>() == null)
+            Debug.LogWarning($"[{name}] ZombieAttackDamageTimed component is missing on this zombie!");
     }
 
     void Start()
@@ -59,7 +63,6 @@ public class ZombieAI_Follow : MonoBehaviour
     {
         if (target == null) return;
 
-        // Y'yi yok sayarak daha stabil mesafe
         Vector3 a = transform.position; a.y = 0f;
         Vector3 b = target.position; b.y = 0f;
         float d = Vector3.Distance(a, b);
@@ -71,27 +74,26 @@ public class ZombieAI_Follow : MonoBehaviour
             return;
         }
 
-        // Attack bölgesine gir/çýk (histerezis)
         if (!inAttackZone && d <= attackRange) inAttackZone = true;
         if (inAttackZone && d >= resumeChaseRange) inAttackZone = false;
 
         if (inAttackZone)
         {
-            // Dur
             StopAgent();
             SetWalking(false);
 
-            // Saldýr (cooldown)
             if (CanAnimate() && Time.time >= nextAttackTime)
             {
                 animator.ResetTrigger(attackTrigger);
                 animator.SetTrigger(attackTrigger);
+
+                GetComponent<ZombieAttackDamageTimed>()?.DoAttack();
+
                 nextAttackTime = Time.time + attackCooldown;
             }
         }
         else
         {
-            // Kovala
             agent.isStopped = false;
             agent.SetDestination(target.position);
 

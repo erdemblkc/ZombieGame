@@ -47,6 +47,42 @@ public class PlayerController2 : MonoBehaviour
     public float upperBodyPitchSmoothing = 30f;
     public float upperBodyPitchClamp = 80f;
 
+    // ---------------- KNOCKBACK / IMPULSE ----------------
+    [Header("Knockback (Impulse)")]
+    public bool enableImpulse = true;
+    [Tooltip("Impulse yatay gücü")]
+    public float impulseHorizontal = 7.5f;
+    [Tooltip("Impulse yukarı gücü")]
+    public float impulseUp = 2.5f;
+    [Tooltip("Impulse kaç saniyede sönsün (Minecraft hissi)")]
+    public float impulseDuration = 0.12f;
+    [Tooltip("Impulse sönümleme hızı (büyükse daha hızlı söner)")]
+    public float impulseDamping = 18f;
+
+    private Vector3 impulseVel;   // world space
+    private float impulseTimer;
+
+    /// <summary>
+    /// Dışarıdan (zombi vurunca) çağır: attackerPosition ver, player geriye savrulsun.
+    /// </summary>
+    public void AddKnockbackFrom(Vector3 attackerPosition)
+    {
+        if (!enableImpulse) return;
+
+        Vector3 dir = (transform.position - attackerPosition);
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.0001f)
+            dir = transform.forward;
+
+        dir.Normalize();
+
+        impulseVel = dir * impulseHorizontal + Vector3.up * impulseUp;
+        impulseTimer = impulseDuration;
+    }
+
+    // -----------------------------------------------------
+
     private CharacterController cc;
     private Animator anim;
 
@@ -99,7 +135,6 @@ public class PlayerController2 : MonoBehaviour
         HandleMovement();
         ApplyAimPitchToUpperBody();
 
-        // sprint kilit süresi sayacı
         if (sprintLockTimer > 0f)
             sprintLockTimer -= Time.deltaTime;
     }
@@ -182,17 +217,21 @@ public class PlayerController2 : MonoBehaviour
 
             dashDir.Normalize();
 
-            cc.Move((dashDir * dashSpeed + verticalVel) * Time.deltaTime);
+            Vector3 dashMove = (dashDir * dashSpeed + verticalVel);
+
+            // impulse'ı dash üstüne de ekleyelim (istersen kapatırız)
+            dashMove += ConsumeImpulse();
+
+            cc.Move(dashMove * Time.deltaTime);
 
             if (anim) anim.SetFloat(speedParam, 1f);
             return;
         }
 
-        // -------- SPRINT + ENERGY (fix: enerji biter bitmez sprint kes) --------
+        // -------- SPRINT + ENERGY --------
         bool wantsSprint = Input.GetKey(sprintKey);
         bool isMoving = input.magnitude > 0.01f;
 
-        // ilk hesap
         bool isSprinting = wantsSprint && isMoving && sprintLockTimer <= 0f && currentEnergy > 0.01f;
 
         if (isSprinting)
@@ -203,7 +242,7 @@ public class PlayerController2 : MonoBehaviour
             {
                 currentEnergy = 0f;
                 sprintLockTimer = sprintExhaustLockTime;
-                isSprinting = false; // ✅ aynı frame sprint kapansın
+                isSprinting = false;
             }
         }
         else
@@ -215,11 +254,35 @@ public class PlayerController2 : MonoBehaviour
 
         float speed = isSprinting ? sprintSpeed : moveSpeed;
 
-        // Move
         Vector3 move = moveDir * speed;
-        cc.Move((move + verticalVel) * Time.deltaTime);
+
+        // ✅ impulse'ı normal harekete ekle
+        Vector3 finalMove = move + verticalVel + ConsumeImpulse();
+        cc.Move(finalMove * Time.deltaTime);
 
         if (anim) anim.SetFloat(speedParam, input.magnitude);
+    }
+
+    // Impulse her frame biraz söner ve 0 olunca biter
+    Vector3 ConsumeImpulse()
+    {
+        if (!enableImpulse) return Vector3.zero;
+
+        if (impulseTimer <= 0f)
+        {
+            impulseVel = Vector3.Lerp(impulseVel, Vector3.zero, impulseDamping * Time.deltaTime);
+            if (impulseVel.sqrMagnitude < 0.0001f) impulseVel = Vector3.zero;
+            return Vector3.zero;
+        }
+
+        impulseTimer -= Time.deltaTime;
+
+        Vector3 v = impulseVel;
+
+        // hızlı sönüm: Minecraft hissi
+        impulseVel = Vector3.Lerp(impulseVel, Vector3.zero, impulseDamping * Time.deltaTime);
+
+        return v;
     }
 
     void ApplyAimPitchToUpperBody()
