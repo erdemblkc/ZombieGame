@@ -5,8 +5,12 @@ using UnityEngine.AI;
 public class ZombieSpawner1 : MonoBehaviour
 {
     [Header("Prefab & Target")]
-    public GameObject zombiePrefab;
+    public GameObject zombiePrefab;          // Wave 1
+    public GameObject zombiePrefabWave2;     // Wave 2 (Zombie2 buraya)
     public Transform player;
+   
+    [Header("Weapon Mission")]
+    public WeaponUpgradeManager weaponMission;
 
     [Header("Spawn Area (Plane Collider)")]
     public Collider spawnAreaCollider;
@@ -23,10 +27,15 @@ public class ZombieSpawner1 : MonoBehaviour
     public int wave2Count = 10;
     public float nextWaveDelay = 2f;
 
-    [Header("Wave 2 Buff")]
+    // ✅ Wave2 buff IP TAL (istenildiği için artık kullanılmıyor)
+    [Header("Wave 2 Buff (DISABLED)")]
     public float wave2SpeedMultiplier = 1.35f;
     public float wave2DamageMultiplier = 1.4f;
     public float wave2HealthMultiplier = 1.25f;
+
+    // ✅ F2 ekstra hız IP TAL (istenildiği için artık kullanılmıyor)
+    [Header("Manual F2 EXTRA Speed (DISABLED)")]
+    public float manualF2ExtraSpeedMultiplier = 3.0f;
 
     [Header("Alive Check")]
     public float aliveCheckInterval = 0.5f;
@@ -34,37 +43,78 @@ public class ZombieSpawner1 : MonoBehaviour
     [Header("Debug")]
     public bool debugLogs = true;
 
+    [Header("Manual Debug Spawn (Demo)")]
+    public bool manualDebugMode = true;
+    public bool autoSpawnWave1OnStart = false;
+    public KeyCode spawnWave1Key = KeyCode.F1;
+    public KeyCode spawnWave2Key = KeyCode.F2;
+    public KeyCode spawnNextWaveKey = KeyCode.F3;
+    public int manualPressLimit = 2;
+
     private readonly List<GameObject> aliveZombies = new List<GameObject>();
     private int currentWave = 0;
     private float nextAliveCheckTime = 0f;
     private bool waitingNextWave = false;
 
+    private int manualPressCount = 0;
+
     void Awake()
     {
-        // ✅ Sahnedeki tüm spawner'ları say (disable olanlar dahil)
         var all = FindObjectsOfType<ZombieSpawner1>(true);
         Debug.Log($"[Spawner-Awake] Found ZombieSpawner1 count = {all.Length}. This = {gameObject.name} (id:{GetInstanceID()})", this);
-
-        // ✅ Prefab referansını daha baştan yazdır
-        Debug.Log($"[Spawner-Awake] {gameObject.name} prefab = {(zombiePrefab ? zombiePrefab.name : "NULL")}", this);
+        Debug.Log($"[Spawner-Awake] {gameObject.name} prefabWave1 = {(zombiePrefab ? zombiePrefab.name : "NULL")} prefabWave2 = {(zombiePrefabWave2 ? zombiePrefabWave2.name : "NULL")}", this);
     }
 
     void Start()
     {
-        // player otomatik bul
         if (player == null)
         {
             GameObject p = GameObject.FindGameObjectWithTag("Player");
             if (p != null) player = p.transform;
         }
 
-        Debug.Log($"[Spawner-Start] {gameObject.name} (id:{GetInstanceID()}) prefab={(zombiePrefab ? zombiePrefab.name : "NULL")} spawnArea={(spawnAreaCollider ? spawnAreaCollider.name : "NULL")} player={(player ? player.name : "NULL")}", this);
+        Debug.Log($"[Spawner-Start] {gameObject.name} (id:{GetInstanceID()}) prefabWave1={(zombiePrefab ? zombiePrefab.name : "NULL")} prefabWave2={(zombiePrefabWave2 ? zombiePrefabWave2.name : "NULL")} spawnArea={(spawnAreaCollider ? spawnAreaCollider.name : "NULL")} player={(player ? player.name : "NULL")}", this);
 
-        SpawnWave(1);
+        if (autoSpawnWave1OnStart)
+        {
+            SpawnWave(1);
+        }
     }
 
     void Update()
     {
+        // ✅ MANUAL DEBUG MODE: tuşlarla spawn
+        if (manualDebugMode)
+        {
+            if (manualPressCount < manualPressLimit)
+            {
+                if (Input.GetKeyDown(spawnWave1Key))
+                {
+                    manualPressCount++;
+                    SpawnWave(1);
+                    if (debugLogs) Debug.Log($"[DEBUG] Spawn Wave 1 ({manualPressCount}/{manualPressLimit})", this);
+                }
+                else if (Input.GetKeyDown(spawnWave2Key))
+                {
+                    manualPressCount++;
+                    SpawnWave(2);
+                    if (debugLogs) Debug.Log($"[DEBUG] Spawn Wave 2 (Zombie2) ({manualPressCount}/{manualPressLimit})", this);
+                }
+                else if (Input.GetKeyDown(spawnNextWaveKey))
+                {
+                    manualPressCount++;
+                    int next = (currentWave <= 0) ? 1 : currentWave + 1;
+                    if (next > 2) next = 2;
+                    SpawnWave(next);
+                    if (debugLogs) Debug.Log($"[DEBUG] Spawn NEXT Wave -> {next} ({manualPressCount}/{manualPressLimit})", this);
+                }
+            }
+
+            // ✅ manuel modda otomatik wave kontrolünü kapatıyoruz
+            return;
+        }
+
+        // ---- Normal (otomatik) sistem ----
         if (currentWave == 0) return;
 
         if (Time.time < nextAliveCheckTime) return;
@@ -97,10 +147,9 @@ public class ZombieSpawner1 : MonoBehaviour
 
     void SpawnWave(int waveNumber)
     {
-        // ✅ Hata mesajına objenin adını + id'yi ekledim
         if (zombiePrefab == null)
         {
-            Debug.LogError($"ZombieSpawner: zombiePrefab atanmadı! -> {gameObject.name} (id:{GetInstanceID()})", this);
+            Debug.LogError($"ZombieSpawner: zombiePrefab (Wave1) atanmadı! -> {gameObject.name} (id:{GetInstanceID()})", this);
             return;
         }
 
@@ -117,16 +166,24 @@ public class ZombieSpawner1 : MonoBehaviour
         }
 
         currentWave = waveNumber;
+        if (waveNumber == 1 && weaponMission != null)
+            weaponMission.StartWeaponMission();
+
         aliveZombies.Clear();
 
         int count = (waveNumber == 1) ? wave1Count : wave2Count;
 
-        if (debugLogs) Debug.Log($"[Spawner] {gameObject.name} Spawning Wave {waveNumber} : {count} zombies", this);
+        // ✅ Wave 2 için farklı prefab seç
+        GameObject prefabToUse = zombiePrefab;
+        if (waveNumber == 2 && zombiePrefabWave2 != null)
+            prefabToUse = zombiePrefabWave2;
+
+        if (debugLogs) Debug.Log($"[Spawner] {gameObject.name} Spawning Wave {waveNumber} : {count} zombies | Prefab={prefabToUse.name}", this);
 
         for (int i = 0; i < count; i++)
         {
             Vector3 pos = FindSpawnPoint();
-            GameObject z = Instantiate(zombiePrefab, pos, Quaternion.identity);
+            GameObject z = Instantiate(prefabToUse, pos, Quaternion.identity);
             aliveZombies.Add(z);
 
             var ai = z.GetComponent<ZombieAI_Follow>();
@@ -137,33 +194,15 @@ public class ZombieSpawner1 : MonoBehaviour
             }
 
             var agent = z.GetComponent<NavMeshAgent>();
-            if (agent != null) agent.Warp(pos);
+            if (agent != null)
+            {
+                agent.Warp(pos);
+                agent.velocity = Vector3.zero;
+                agent.ResetPath();
+            }
 
-            if (waveNumber == 2)
-                ApplyWave2Buff(z);
-        }
-    }
-
-    void ApplyWave2Buff(GameObject z)
-    {
-        var agent = z.GetComponent<NavMeshAgent>();
-        if (agent != null)
-        {
-            agent.speed *= wave2SpeedMultiplier;
-            agent.acceleration *= wave2SpeedMultiplier;
-        }
-
-        var atk = z.GetComponent<ZombieAttackDamageTimed>();
-        if (atk != null)
-        {
-            atk.damage *= wave2DamageMultiplier;
-        }
-
-        var hp = z.GetComponent<ZombieHealth1>();
-        if (hp != null)
-        {
-            hp.maxHealth *= wave2HealthMultiplier;
-            hp.currentHealth = hp.maxHealth;
+            // ✅ Wave2 buff tamamen iptal edildi:
+            // if (waveNumber == 2) ApplyWave2Buff(z);
         }
     }
 

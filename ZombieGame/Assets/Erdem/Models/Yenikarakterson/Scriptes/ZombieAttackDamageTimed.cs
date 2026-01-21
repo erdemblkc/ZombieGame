@@ -57,7 +57,13 @@ public class ZombieAttackDamageTimed : MonoBehaviour
             var receiver = hits[i].GetComponent<PlayerDamageReceiver>();
             if (receiver != null)
             {
+                // 1) Damage + infection vs.
                 receiver.TakeDamage(damage);
+
+                // 2) Knockback (Minecraft-ish) -> PlayerController2 impulse
+                var pc = hits[i].GetComponent<PlayerController2>();
+                if (pc != null)
+                    pc.AddKnockbackFrom(transform.position);
 
                 if (debugLogs)
                     Debug.Log($"[{name}] Hit player: {hits[i].name}");
@@ -66,6 +72,7 @@ public class ZombieAttackDamageTimed : MonoBehaviour
             }
         }
     }
+
 
     private void OnDrawGizmosSelected()
     {

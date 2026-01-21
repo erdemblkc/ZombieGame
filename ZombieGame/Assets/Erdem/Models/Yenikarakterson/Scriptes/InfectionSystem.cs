@@ -8,7 +8,7 @@ public class InfectionSystem : MonoBehaviour
     public float maxInfection = 100f;
 
     [Tooltip("Zamanla 100'e kaç saniyede ulaşsın? (Örn 600 = 10 dk)")]
-    public float timeToMaxSeconds = 600f; // ✅ daha yavaş: 10 dakika
+    public float timeToMaxSeconds = 2400f; // ✅ daha yavaş: 10 dakika
 
     [Tooltip("Hasar yedikçe eklenecek yüzde (sabit kalsın: 10)")]
     public float increaseOnHit = 10f;

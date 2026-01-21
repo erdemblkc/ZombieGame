@@ -16,6 +16,7 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
     [Tooltip("Die anim bitince yerde kaç saniye kalsın?")]
     public float stayOnGroundTime = 0.6f;
 
+
     [Tooltip("Die anim klibinin süresi. 0 bırakılırsa despawnDelay kullanılır.")]
     public float dieAnimDuration = 0f;
 
@@ -40,6 +41,11 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
         if (isDead) return;
 
         currentHealth -= amount;
+        // Hit feedback
+        GetComponent<ZombieHitFlash>()?.Flash();
+        GetComponent<ZombieHitReact>()?.React(Camera.main != null ? Camera.main.transform.position : transform.position);
+
+
 
         if (currentHealth <= 0f)
             Die();

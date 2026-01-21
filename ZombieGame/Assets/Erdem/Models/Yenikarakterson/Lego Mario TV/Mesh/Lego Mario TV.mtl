@@ -1,0 +1,48 @@
+# Blender MTL File: 'Lego Mario TV.blend'
+# Material Count: 4
+
+newmtl Glass
+Ns 900.000000
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+
+newmtl Mario_Pin
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd D:\\Blender\\Textures\\Baked Textures\\Mario TV\\Mario Jumping.png
+map_Ns D:\\Blender\\Textures\\Baked Textures\\Mario TV\\Mario_Pin_Roughness.png
+map_d D:\\Blender\\Textures\\Baked Textures\\Mario TV\\Mario Jumping.png
+
+newmtl Mario_Screen_Color
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd D:\\Blender\\Textures\\Baked Textures\\Mario TV\\Mario_Screen_Color.png
+
+newmtl Mario_TV
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd D:\\Blender\\Textures\\Baked Textures\\Mario TV\\Mario_TV_Color.png
+map_Ns D:\\Blender\\Textures\\Baked Textures\\Mario TV\\Mario_TV_Roughness.png
