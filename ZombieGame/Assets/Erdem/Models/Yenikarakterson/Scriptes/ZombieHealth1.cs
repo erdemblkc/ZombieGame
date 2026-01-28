@@ -7,6 +7,11 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
     [Header("Health")]
     public float maxHealth = 100f;
     public float currentHealth = 100f;
+    [Header("HP Bar")]
+    public ZombieHealthBarUI hpBarPrefab;
+    public Transform hpBarTarget;
+
+    private ZombieHealthBarUI hpBar;
 
     [Header("Animation")]
     public Animator animator;
@@ -34,6 +39,13 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
             animator = GetComponentInChildren<Animator>();
 
         currentHealth = maxHealth;
+        if (hpBarPrefab != null)
+        {
+            hpBar = Instantiate(hpBarPrefab);
+            hpBar.target = (hpBarTarget != null) ? hpBarTarget : transform;
+            hpBar.SetValue(currentHealth, maxHealth);
+        }
+
     }
 
     public void TakeDamage(float amount)
@@ -41,6 +53,12 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
         if (isDead) return;
 
         currentHealth -= amount;
+        if (hpBar != null)
+        {
+            hpBar.SetValue(currentHealth, maxHealth);
+            hpBar.ShowAndAutoHide();
+        }
+
         // Hit feedback
         GetComponent<ZombieHitFlash>()?.Flash();
         GetComponent<ZombieHitReact>()?.React(Camera.main != null ? Camera.main.transform.position : transform.position);

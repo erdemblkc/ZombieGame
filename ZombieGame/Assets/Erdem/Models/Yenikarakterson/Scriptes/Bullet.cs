@@ -31,6 +31,8 @@ public class Bullet : MonoBehaviour
         if (damageable != null)
         {
             damageable.TakeDamage(damage);
+            HitmarkerUI.Instance?.OnHit();
+
         }
 
         Destroy(gameObject);

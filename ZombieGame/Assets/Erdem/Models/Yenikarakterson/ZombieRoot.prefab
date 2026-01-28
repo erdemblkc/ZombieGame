@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2376477908855845711
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1053060112616982800}
+  m_Layer: 0
+  m_Name: HitOrigin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1053060112616982800
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2376477908855845711}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 2.01, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1628958403854293450}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7073092422225854229
 GameObject:
   m_ObjectHideFlags: 0
@@ -43,6 +74,12 @@ GameObject:
   - component: {fileID: 1628958403854293450}
   - component: {fileID: 2891482372547344115}
   - component: {fileID: 1664312820649179649}
+  - component: {fileID: 8364575926103566551}
+  - component: {fileID: 1021429847570741988}
+  - component: {fileID: 473045049084366095}
+  - component: {fileID: 2058966126385750769}
+  - component: {fileID: -3708551635586975146}
+  - component: {fileID: 3956654236668330273}
   m_Layer: 0
   m_Name: ZombieRoot
   m_TagString: Untagged
@@ -60,10 +97,11 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -242.07768, y: 72.72613, z: 5.97996}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.4267491, y: 0.4267491, z: 0.4267491}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3314800181768873921}
+  - {fileID: 1053060112616982800}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!195 &2891482372547344115
@@ -111,6 +149,119 @@ CapsuleCollider:
   m_Height: 4.23
   m_Direction: 1
   m_Center: {x: 0, y: 1.98, z: 0}
+--- !u!114 &8364575926103566551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8765259722836522806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5270ded1a5202994fbc0ca484644305d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZombieAI_Follow
+  target: {fileID: 0}
+  chaseRange: 50
+  attackRange: 1.2
+  resumeChaseRange: 2.2
+  attackCooldown: 1.2
+  animator: {fileID: 0}
+  isWalkingBool: IsWalking
+  attackTrigger: Attack
+  visual: {fileID: 0}
+  turnSpeed: 12
+  visualYawOffset: 180
+--- !u!114 &1021429847570741988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8765259722836522806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bba917a97fdeb04ebde6ea0d5e368de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZombieHealth1
+  maxHealth: 100
+  currentHealth: 100
+  hpBarPrefab: {fileID: 1997378734796845009, guid: 559529f0934a51846a6598f8ff46c450, type: 3}
+  hpBarTarget: {fileID: 1628958403854293450}
+  animator: {fileID: 0}
+  dieTrigger: Die
+  stayOnGroundTime: 0.6
+  dieAnimDuration: 0
+  despawnDelay: 1.2
+  disableCollidersOnDeath: 1
+--- !u!114 &473045049084366095
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8765259722836522806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5e3473588acc5e49862c99d537de5a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZombieHitReact
+  enableKnockback: 1
+  knockbackDistance: 0.35
+  knockbackTime: 0.08
+  stopAIWhileKnockback: 0
+  stopAgentWhileKnockback: 0
+--- !u!114 &2058966126385750769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8765259722836522806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5a3fa13769cf1d48a8be31b0cb36dee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZombieHitFlash
+  flashDuration: 0.08
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+--- !u!114 &-3708551635586975146
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8765259722836522806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 865b4a9c33f181c47b298e0cb82b07ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZombieAttackDamageTimed
+  hitDelay: 0.6
+  attackCooldown: 0.5
+  hitRadius: 0.74
+  hitDistanceForward: 0
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  hitOrigin: {fileID: 1053060112616982800}
+  hitHeightOffset: 1
+  damage: 10
+  debugLogs: 1
+--- !u!114 &3956654236668330273
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8765259722836522806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 277c93e278675d045ba4109dec532223, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZombieFaceFlashByMaterial
+  faceBaseMaterial: {fileID: 2100000, guid: 6dae34080a485b244a68d802d5e7639e, type: 2}
+  angryMaterial: {fileID: 2100000, guid: f23576a0a8a644148a634ea263a78a06, type: 2}
 --- !u!1001 &889157365080577271
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -163,6 +314,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Zombie
       objectReference: {fileID: 0}
+    - target: {fileID: 4911357642373912926, guid: baab373a8f4b4ed46b61dd6bde42b14f, type: 3}
+      propertyPath: m_Name
+      value: ZombieHead
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: baab373a8f4b4ed46b61dd6bde42b14f, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 0f9e62ecc07d54c44837c063ff2f1382, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -1,42 +1,34 @@
 using UnityEngine;
 
-public class AmmoPickup : MonoBehaviour
+public class AmmoPickup : MonoBehaviour, IInteractable
 {
     [Header("Pickup Settings")]
-    public int ammoAmount = 16;                // kaç mermi versin
-    public KeyCode pickupKey = KeyCode.E;      // E ile al
-    public string playerTag = "Player";
+    public int ammoAmount = 16;
 
-    private GunShooter playerGun;              // player'ýn GunShooter'ý
-    private bool playerInRange;
+    [Header("UI Prompt")]
+    public string promptText = "E - Pick up Ammo";
 
-    void OnTriggerEnter(Collider other)
+    public string GetPromptText()
     {
-        if (!other.CompareTag(playerTag)) return;
-
-        playerInRange = true;
-
-        // Player üzerinde veya child'larýnda GunShooter ara
-        playerGun = other.GetComponentInChildren<GunShooter>();
+        return promptText;
     }
 
-    void OnTriggerExit(Collider other)
+    public void Interact(GameObject interactor)
     {
-        if (!other.CompareTag(playerTag)) return;
+        if (interactor == null) return;
 
-        playerInRange = false;
-        playerGun = null;
-    }
+        // Player üzerindeki / child'ýndaki GunShooter'ý bul
+        GunShooter gun = interactor.GetComponentInChildren<GunShooter>();
+        if (gun == null)
+            gun = interactor.GetComponentInParent<GunShooter>();
 
-    void Update()
-    {
-        if (!playerInRange) return;
-        if (playerGun == null) return;
-
-        if (Input.GetKeyDown(pickupKey))
+        if (gun == null)
         {
-            playerGun.AddReserveAmmo(ammoAmount);
-            Destroy(gameObject);
+            Debug.LogWarning("[AmmoPickup] GunShooter not found on interactor.");
+            return;
         }
+
+        gun.AddReserveAmmo(ammoAmount);
+        Destroy(gameObject);
     }
 }

@@ -3,63 +3,99 @@ using TMPro;
 
 public class WeaponUpgradeManager : MonoBehaviour
 {
-    [Header("UI")]
+    [Header("UI - Assign in Inspector")]
     public GameObject missionTextObject;
-    public GameObject unlockPopupObject;
+    public TMP_Text missionTextTMP;
 
-    [Header("Weapons")]
+    [Header("Toast (NEW WEAPON)")]
+    public WeaponUnlockToast toast;          // sahnedeki WeaponUnlockToast objesini buraya ata
+    public Sprite newWeaponSprite;           // yeni silah png/sprite (UI sprite)
+    public string toastTitle = "NEW WEAPON";
+
+    [Header("Gun Shooter Ref")]
+    public GunShooter shooter;
+
+    [Header("Text Settings")]
+    public string missionTextFormat = "Silah parçaları topla {0}/{1}";
+
+    [Header("Weapons - Assign in Inspector")]
     public GameObject gunOld;
     public GameObject gunNew;
 
     [Header("Upgrade Settings")]
     public int requiredParts = 2;
+    public bool startOnGameStart = true;
 
-    private int collectedParts = 0;
-    private bool upgradeCompleted = false;
+    int collectedParts = 0;
+    bool upgradeCompleted = false;
 
-    // 🔹 Wave 1 başladığında çağıracağız
-    public void StartWeaponMission()
+    // ZombieSpawner eski çağrısı için
+    public void StartWeaponMission() => StartMission();
+
+    void Awake()
     {
-        if (missionTextObject != null)
-            missionTextObject.SetActive(true);
+        if (missionTextTMP == null && missionTextObject != null)
+            missionTextTMP = missionTextObject.GetComponentInChildren<TMP_Text>(true);
+
+        if (gunNew != null) gunNew.SetActive(false);
+        if (gunOld != null) gunOld.SetActive(true);
     }
 
-    // 🔹 Silah parçası toplandığında çağıracağız
+    void Start()
+    {
+        if (startOnGameStart)
+            StartMission();
+    }
+
+    public void StartMission()
+    {
+        if (upgradeCompleted) return;
+
+        collectedParts = 0;
+        SetMissionVisible(true);
+        UpdateMissionText();
+    }
+
     public void CollectWeaponPart()
     {
         if (upgradeCompleted) return;
 
         collectedParts++;
+        UpdateMissionText();
 
         if (collectedParts >= requiredParts)
-        {
             CompleteUpgrade();
-        }
+    }
+
+    void UpdateMissionText()
+    {
+        if (missionTextTMP != null)
+            missionTextTMP.text = string.Format(missionTextFormat, collectedParts, requiredParts);
+    }
+
+    void SetMissionVisible(bool visible)
+    {
+        if (missionTextObject != null)
+            missionTextObject.SetActive(visible);
     }
 
     void CompleteUpgrade()
     {
         upgradeCompleted = true;
 
+        // Mission yazısı kapansın
         if (missionTextObject != null)
             missionTextObject.SetActive(false);
 
-        if (unlockPopupObject != null)
-            unlockPopupObject.SetActive(true);
+        // Silah değiştir
+        if (gunOld != null) gunOld.SetActive(false);
+        if (gunNew != null) gunNew.SetActive(true);
 
-        if (gunOld != null)
-            gunOld.SetActive(false);
+        if (shooter != null)
+            shooter.useDoubleBulletPrefab = true;
 
-        if (gunNew != null)
-            gunNew.SetActive(true);
-
-        // Popup 2 saniye sonra kapansın
-        Invoke(nameof(HidePopup), 2f);
-    }
-
-    void HidePopup()
-    {
-        if (unlockPopupObject != null)
-            unlockPopupObject.SetActive(false);
+        // ✅ SADECE TOAST GÖSTER (background yok)
+        if (toast != null)
+            toast.Show(newWeaponSprite, toastTitle);
     }
 }

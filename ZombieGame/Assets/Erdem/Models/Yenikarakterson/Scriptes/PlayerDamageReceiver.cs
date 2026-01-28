@@ -89,4 +89,10 @@ public class PlayerDamageReceiver : MonoBehaviour
         _knockVel = dir * knockbackHorizontal + Vector3.up * knockbackUp;
         _knockTimeLeft = knockbackDuration;
     }
+    public void FullHeal()
+    {
+        currentHealth = maxHealth;
+    }
+
 }
+

@@ -1456,7 +1456,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.4, y: 0.4, z: 0.4}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5111925005795433348}
@@ -1571,6 +1571,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ZombieHealth1
   maxHealth: 100
   currentHealth: 100
+  hpBarPrefab: {fileID: 0}
+  hpBarTarget: {fileID: 0}
   animator: {fileID: 0}
   dieTrigger: Die
   stayOnGroundTime: 0.6
@@ -1596,6 +1598,8 @@ MonoBehaviour:
   playerLayer:
     serializedVersion: 2
     m_Bits: 512
+  hitOrigin: {fileID: 0}
+  hitHeightOffset: 1
   damage: 10
   debugLogs: 1
 --- !u!114 &473002740619693441
@@ -1624,10 +1628,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5e3473588acc5e49862c99d537de5a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ZombieHitReact
-  stunTime: 0.18
   enableKnockback: 1
   knockbackDistance: 0.35
   knockbackTime: 0.08
+  stopAIWhileKnockback: 0
+  stopAgentWhileKnockback: 0
 --- !u!1 &4412184103817438228
 GameObject:
   m_ObjectHideFlags: 0

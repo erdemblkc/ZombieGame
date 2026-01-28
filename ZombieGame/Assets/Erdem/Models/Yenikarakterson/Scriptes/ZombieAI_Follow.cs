@@ -61,7 +61,10 @@ public class ZombieAI_Follow : MonoBehaviour
 
     void Update()
     {
+
         if (target == null) return;
+        if (!agent.isOnNavMesh) return;
+
 
         Vector3 a = transform.position; a.y = 0f;
         Vector3 b = target.position; b.y = 0f;

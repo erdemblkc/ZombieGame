@@ -1,43 +1,36 @@
 ﻿using UnityEngine;
 
-public class AntidotePickup : MonoBehaviour
+public class AntidotePickup : MonoBehaviour, IInteractable
 {
-    [Header("Interaction")]
-    public KeyCode useKey = KeyCode.T;
-    public float useRange = 2.0f;
+    [Header("UI Prompt")]
+    public string promptText = "E - Pick up Vaccine";
 
     [Header("Consume")]
     public bool consumeOnUse = true;
 
-    [Header("Refs (optional)")]
-    public Transform player;
-    private InfectionSystem _infection;
-
-    void Start()
+    public string GetPromptText()
     {
-        if (player == null)
-        {
-            GameObject p = GameObject.FindGameObjectWithTag("Player");
-            if (p != null) player = p.transform;
-        }
-
-        if (player != null)
-            _infection = player.GetComponent<InfectionSystem>();
+        return promptText;
     }
 
-    void Update()
+    public void Interact(GameObject interactor)
     {
-        if (player == null || _infection == null) return;
+        if (interactor == null) return;
 
-        float d = Vector3.Distance(player.position, transform.position);
-        if (d > useRange) return;
+        // Player'dan InfectionSystem bul
+        InfectionSystem infection = interactor.GetComponentInChildren<InfectionSystem>();
+        if (infection == null)
+            infection = interactor.GetComponentInParent<InfectionSystem>();
 
-        if (Input.GetKeyDown(useKey))
+        if (infection == null)
         {
-            _infection.ResetInfection(); // ✅ direkt 0
-
-            if (consumeOnUse)
-                gameObject.SetActive(false);
+            Debug.LogWarning("[AntidotePickup] InfectionSystem not found on interactor.");
+            return;
         }
+
+        infection.ResetInfection(); // ✅ direkt 0
+
+        if (consumeOnUse)
+            Destroy(gameObject);      // istersen SetActive(false) de yapabilirsin
     }
 }
