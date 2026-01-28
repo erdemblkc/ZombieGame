@@ -8,65 +8,68 @@ public class GunShooter : MonoBehaviour
     [Header("Refs")]
     public Animator anim;
     public Transform cameraPivot;
-    public Transform muzzle;
-    public Bullet bulletPrefab;
+    // public Transform muzzle; // KALDIRILDI: Artık silahtan alınıyor.
     public TextMeshProUGUI ammoText;
 
-    [Header("Alt Fire (New Gun)")]
-    public bool useDoubleBulletPrefab = false;   // upgrade olunca true
-    public DoubleBullet doubleBulletPrefab;      // DoubleBullet prefab
-
-    [Header("New Gun Barrels (Optional)")]
-    public Transform leftBarrel;
-    public Transform rightBarrel;
+    [Header("Guns (Hierarchy Children)")]
+    public GameObject gunOld;   // Gun_Old
+    public GameObject gunNew;   // Gun_New
+    public WeaponStats currentWeapon; // aktif silahın stats'ı
 
     [Header("Reload UI")]
-    public Image reloadCircle;          // Radial image (fill)
+    public Image reloadCircle;
     public bool showReloadCircle = true;
 
     [Header("Animator Params")]
     public string aimingParam = "IsAiming";
     public string shootParam = "Shoot";
 
-    [Header("Reload Idle Override")]
-    public string idleStateName = "Stand";
-    public float idleForceBlend = 0.05f;
-
-    [Header("Gun Settings")]
-    public float fireCooldown = 0.12f;
-    public float bulletSpawnOffset = 0.03f;
-
-    [Header("Weapon Damage")]
-    public float oldGunDamage = 25f;
-    public float newGunDamage = 100f;
-
-    [Header("Ammo (OLD GUN)")]
-    public int oldMagazineSize = 12;
-    public int oldReserveStart = 36;
-    public float oldReloadTime = 1.0f;
-
-    [Header("Ammo (NEW GUN)")]
-    public int newMagazineSize = 2;     // istediğin: 2
-    public int newReserveStart = 12;    // istediğin: 12
-    public float newReloadTime = 1.8f;  // yeni silah reload daha uzun olsun istersen 1.8-3.0 arası
-
-    [Header("Ammo General")]
-    public bool autoReloadWhenEmpty = true;
-
     // ---- runtime ----
     int currentAmmo;
     int reserveAmmo;
-    int magazineSize;
-    float reloadTime;
 
     float nextFireTime;
     bool isReloading;
 
-    // İki silahın ammo havuzları ayrı
-    int old_currentAmmo, old_reserveAmmo;
-    int new_currentAmmo, new_reserveAmmo;
+    // =========================
+    // API (Dışarıdan çağrılanlar)
+    // =========================
 
-    bool lastWeaponMode;
+    public void SetNewGunEnabled(bool enabled)
+    {
+        if (enabled) UpgradeToNewGun();
+        else SwitchToOldGun();
+    }
+
+    public void AddReserveAmmo(int amount)
+    {
+        amount = Mathf.Max(0, amount);
+        reserveAmmo += amount;
+        UpdateAmmoUI();
+    }
+
+    public void ApplyDamageMultiplier(float mul)
+    {
+        mul = Mathf.Max(0.1f, mul);
+
+        if (currentWeapon != null) currentWeapon.damage *= mul;
+
+        // Pasif silahların da hasarını güncelle
+        if (gunOld != null)
+        {
+            var ws = gunOld.GetComponent<WeaponStats>();
+            if (ws != null) ws.damage *= mul;
+        }
+        if (gunNew != null)
+        {
+            var ws = gunNew.GetComponent<WeaponStats>();
+            if (ws != null) ws.damage *= mul;
+        }
+    }
+
+    // =========================
+    // UNITY
+    // =========================
 
     void Awake()
     {
@@ -79,64 +82,56 @@ public class GunShooter : MonoBehaviour
         if (cameraPivot == null && Camera.main != null)
             cameraPivot = Camera.main.transform;
 
-        // Başlangıç ammo havuzları
-        old_currentAmmo = oldMagazineSize;
-        old_reserveAmmo = oldReserveStart;
+        // Başlangıçta aktif silah seçimi
+        if (currentWeapon == null)
+        {
+            if (gunNew != null && gunNew.activeInHierarchy)
+                SetWeapon(gunNew);
+            else if (gunOld != null)
+                SetWeapon(gunOld);
+        }
 
-        new_currentAmmo = newMagazineSize;
-        new_reserveAmmo = newReserveStart;
-
-        lastWeaponMode = useDoubleBulletPrefab;
-
-        ApplyWeaponMode(force: true);
-
-        UpdateAmmoUI();
         SetReloadCircleVisible(false);
+        UpdateAmmoUI();
+
+        if (anim != null) anim.SetBool(aimingParam, false);
     }
 
     void Update()
     {
-        // Silah modu değiştiyse (upgrade sonrası) yeni ayarları uygula
-        if (useDoubleBulletPrefab != lastWeaponMode)
-        {
-            ApplyWeaponMode(force: true);
-        }
+        if (currentWeapon == null) return;
 
-        // Reload sırasında: shoot anim bastır + idle'a zorla
+        // AIM
+        if (anim != null)
+            anim.SetBool(aimingParam, Input.GetMouseButton(1));
+
         if (isReloading)
         {
-            if (anim != null)
-            {
-                anim.ResetTrigger(shootParam);
-                if (!string.IsNullOrEmpty(idleStateName))
-                    anim.CrossFade(idleStateName, idleForceBlend, 0);
-            }
+            if (anim != null) anim.ResetTrigger(shootParam);
             return;
         }
 
-        // Reload: R
+        // Reload Input
         if (Input.GetKeyDown(KeyCode.R))
         {
             TryReload();
             return;
         }
 
-        // boşsa otomatik reload
+        // Auto Reload
         if (currentAmmo <= 0)
         {
-            if (autoReloadWhenEmpty) TryReload();
+            if (currentWeapon.autoReloadWhenEmpty) TryReload();
             return;
         }
 
-        // Shoot: sol tık (cooldown)
+        // Shoot Input
         if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
         {
             if (currentAmmo <= 0) return;
 
-            nextFireTime = Time.time + fireCooldown;
-
+            nextFireTime = Time.time + currentWeapon.fireCooldown;
             currentAmmo--;
-            SyncAmmoToPool();
             UpdateAmmoUI();
 
             if (anim != null) anim.SetTrigger(shootParam);
@@ -144,52 +139,11 @@ public class GunShooter : MonoBehaviour
         }
     }
 
-    // Silah modu değişince: doğru mag/reserve/reloadTime yükle + UI güncelle
-    void ApplyWeaponMode(bool force)
-    {
-        lastWeaponMode = useDoubleBulletPrefab;
-
-        if (useDoubleBulletPrefab)
-        {
-            // NEW GUN mode
-            magazineSize = newMagazineSize;
-            reloadTime = newReloadTime;
-
-            currentAmmo = new_currentAmmo;
-            reserveAmmo = new_reserveAmmo;
-        }
-        else
-        {
-            // OLD GUN mode
-            magazineSize = oldMagazineSize;
-            reloadTime = oldReloadTime;
-
-            currentAmmo = old_currentAmmo;
-            reserveAmmo = old_reserveAmmo;
-        }
-
-        UpdateAmmoUI();
-    }
-
-    // currentAmmo/reserveAmmo değişince doğru havuza yaz
-    void SyncAmmoToPool()
-    {
-        if (useDoubleBulletPrefab)
-        {
-            new_currentAmmo = currentAmmo;
-            new_reserveAmmo = reserveAmmo;
-        }
-        else
-        {
-            old_currentAmmo = currentAmmo;
-            old_reserveAmmo = reserveAmmo;
-        }
-    }
-
     void TryReload()
     {
         if (isReloading) return;
-        if (currentAmmo >= magazineSize) return;
+        if (currentWeapon == null) return;
+        if (currentAmmo >= currentWeapon.magazineSize) return;
         if (reserveAmmo <= 0) return;
 
         StartCoroutine(ReloadRoutine());
@@ -198,8 +152,7 @@ public class GunShooter : MonoBehaviour
     IEnumerator ReloadRoutine()
     {
         isReloading = true;
-
-        // Ateşi kes
+        float reloadTime = currentWeapon.reloadTime;
         nextFireTime = Mathf.Max(nextFireTime, Time.time + reloadTime);
 
         if (showReloadCircle) SetReloadCircleVisible(true);
@@ -208,63 +161,66 @@ public class GunShooter : MonoBehaviour
         while (t < reloadTime)
         {
             t += Time.deltaTime;
-
             if (reloadCircle != null)
                 reloadCircle.fillAmount = Mathf.Clamp01(t / reloadTime);
 
-            if (anim != null)
-            {
-                anim.ResetTrigger(shootParam);
-                if (!string.IsNullOrEmpty(idleStateName))
-                    anim.CrossFade(idleStateName, idleForceBlend, 0);
-            }
-
+            if (anim != null) anim.ResetTrigger(shootParam);
             yield return null;
         }
 
-        int need = magazineSize - currentAmmo;
+        int need = currentWeapon.magazineSize - currentAmmo;
         int take = Mathf.Min(need, reserveAmmo);
-
         currentAmmo += take;
         reserveAmmo -= take;
 
-        SyncAmmoToPool();
         UpdateAmmoUI();
-
         SetReloadCircleVisible(false);
-
         isReloading = false;
     }
 
     void ShootProjectile()
     {
         if (isReloading) return;
-        if (muzzle == null || cameraPivot == null) return;
+        if (cameraPivot == null || currentWeapon == null) return;
 
-        // aktif silaha göre damage seç
-        float dmg = useDoubleBulletPrefab ? newGunDamage : oldGunDamage;
-
-        Vector3 dir = cameraPivot.forward;
-        Vector3 spawnPos = muzzle.position + muzzle.forward * bulletSpawnOffset;
-        Quaternion spawnRot = Quaternion.LookRotation(dir, Vector3.up);
-
-        // NEW GUN: DoubleBullet
-        if (useDoubleBulletPrefab && doubleBulletPrefab != null)
+        // YENİ: Muzzle'ı aktif silahtan al
+        Transform firePoint = currentWeapon.muzzle;
+        if (firePoint == null)
         {
-            DoubleBullet db = Instantiate(doubleBulletPrefab, spawnPos, spawnRot);
-            db.leftBarrel = leftBarrel;
-            db.rightBarrel = rightBarrel;
-            db.damage = dmg;
-            db.Fire(dir);
+            Debug.LogError($"HATA: {currentWeapon.name} objesindeki WeaponStats scriptinde 'Muzzle' boş! Lütfen atama yap.");
             return;
         }
 
-        // OLD GUN: single bullet
-        if (bulletPrefab == null) return;
+        Vector3 dir = cameraPivot.forward;
+        Vector3 spawnPos = firePoint.position;
+        Quaternion spawnRot = Quaternion.LookRotation(dir, Vector3.up);
 
-        Bullet b = Instantiate(bulletPrefab, spawnPos, spawnRot);
-        b.damage = dmg;
-        b.Fire(dir);
+        // Debug için konsola yazalım (Sorun çözülünce silebilirsin)
+        // Debug.Log($"Ateşlenen: {currentWeapon.name} | Hasar: {currentWeapon.damage} | DoubleMode: {currentWeapon.useDoubleBullet}");
+
+        // --- DOUBLE BULLET ---
+        if (currentWeapon.useDoubleBullet)
+        {
+            if (currentWeapon.doubleBulletPrefab != null)
+            {
+                DoubleBullet db = Instantiate(currentWeapon.doubleBulletPrefab, spawnPos, spawnRot);
+                // Namlu çıkışlarını aktar
+                db.leftBarrel = currentWeapon.leftBarrel;
+                db.rightBarrel = currentWeapon.rightBarrel;
+                // Hasarı aktar
+                db.damage = currentWeapon.damage;
+                db.Fire(dir);
+            }
+            return;
+        }
+
+        // --- SINGLE BULLET ---
+        if (currentWeapon.singleBulletPrefab != null)
+        {
+            Bullet b = Instantiate(currentWeapon.singleBulletPrefab, spawnPos, spawnRot);
+            b.damage = currentWeapon.damage;
+            b.Fire(dir);
+        }
     }
 
     void UpdateAmmoUI()
@@ -273,33 +229,51 @@ public class GunShooter : MonoBehaviour
             ammoText.text = $"{currentAmmo} / {reserveAmmo}";
     }
 
-    // Pickup vs: aktif silahın reserve'ına ekler
-    public void AddReserveAmmo(int amount)
-    {
-        amount = Mathf.Max(0, amount);
-        reserveAmmo += amount;
-        SyncAmmoToPool();
-        UpdateAmmoUI();
-    }
-
     void SetReloadCircleVisible(bool v)
     {
-        if (reloadCircle == null) return;
-        reloadCircle.gameObject.SetActive(v);
-        if (v) reloadCircle.fillAmount = 0f;
+        if (reloadCircle != null)
+        {
+            reloadCircle.gameObject.SetActive(v);
+            if (v) reloadCircle.fillAmount = 0f;
+        }
     }
 
-    // Upgrade manager’dan çağırmak istersen
-    public void SetNewGunEnabled(bool enabled)
+    public void UpgradeToNewGun()
     {
-        useDoubleBulletPrefab = enabled;
-        ApplyWeaponMode(force: true);
-    }
-    public void ApplyDamageMultiplier(float mul)
-    {
-        mul = Mathf.Max(0.1f, mul);
-        oldGunDamage *= mul;
-        newGunDamage *= mul;
+        if (gunOld != null) gunOld.SetActive(false);
+        if (gunNew != null) gunNew.SetActive(true);
+
+        if (gunNew != null) SetWeapon(gunNew);
     }
 
+    public void SwitchToOldGun()
+    {
+        if (gunNew != null) gunNew.SetActive(false);
+        if (gunOld != null) gunOld.SetActive(true);
+
+        if (gunOld != null) SetWeapon(gunOld);
+    }
+
+    void SetWeapon(GameObject gunObj)
+    {
+        if (gunObj == null) return;
+        WeaponStats newStats = gunObj.GetComponent<WeaponStats>();
+
+        if (newStats == null)
+        {
+            Debug.LogError($"WeaponStats eksik: {gunObj.name}");
+            return;
+        }
+
+        currentWeapon = newStats;
+
+        // Mermi bilgilerini yenile
+        currentAmmo = currentWeapon.magazineSize;
+        reserveAmmo = currentWeapon.reserveStart;
+        isReloading = false;
+        nextFireTime = 0f;
+
+        UpdateAmmoUI();
+        SetReloadCircleVisible(false);
+    }
 }

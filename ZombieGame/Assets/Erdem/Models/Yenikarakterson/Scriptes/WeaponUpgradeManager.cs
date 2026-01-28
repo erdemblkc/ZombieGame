@@ -12,8 +12,8 @@ public class WeaponUpgradeManager : MonoBehaviour
     public Sprite newWeaponSprite;           // yeni silah png/sprite (UI sprite)
     public string toastTitle = "NEW WEAPON";
 
-    [Header("Gun Shooter Ref")]
-    public GunShooter shooter;
+    [Header("Gun Shooter Ref (ÖNEMLİ)")]
+    public GunShooter shooter; // GunShooter scriptini buraya sürükle
 
     [Header("Text Settings")]
     public string missionTextFormat = "Silah parçaları topla {0}/{1}";
@@ -29,7 +29,7 @@ public class WeaponUpgradeManager : MonoBehaviour
     int collectedParts = 0;
     bool upgradeCompleted = false;
 
-    // ZombieSpawner eski çağrısı için
+    // ZombieSpawner eski çağrısı için wrapper
     public void StartWeaponMission() => StartMission();
 
     void Awake()
@@ -37,6 +37,7 @@ public class WeaponUpgradeManager : MonoBehaviour
         if (missionTextTMP == null && missionTextObject != null)
             missionTextTMP = missionTextObject.GetComponentInChildren<TMP_Text>(true);
 
+        // Başlangıçta eski silah açık, yeni silah kapalı olsun
         if (gunNew != null) gunNew.SetActive(false);
         if (gunOld != null) gunOld.SetActive(true);
     }
@@ -87,14 +88,22 @@ public class WeaponUpgradeManager : MonoBehaviour
         if (missionTextObject != null)
             missionTextObject.SetActive(false);
 
-        // Silah değiştir
-        if (gunOld != null) gunOld.SetActive(false);
-        if (gunNew != null) gunNew.SetActive(true);
-
+        // --- DÜZELTME BURADA ---
+        // Objeleri manuel açıp kapatmak yerine GunShooter'a haber veriyoruz.
+        // Bu sayede GunShooter hem objeyi değiştiriyor hem de DAMAGE/MERMİ bilgisini güncelliyor.
         if (shooter != null)
-            shooter.useDoubleBulletPrefab = true;
+        {
+            shooter.SetNewGunEnabled(true);
+        }
+        else
+        {
+            Debug.LogError("WeaponUpgradeManager: 'Shooter' referansı boş! Inspector'dan ata.");
+            // Acil durum yedeği (shooter yoksa manuel açalım en azından görüntü değişsin)
+            if (gunOld != null) gunOld.SetActive(false);
+            if (gunNew != null) gunNew.SetActive(true);
+        }
 
-        // ✅ SADECE TOAST GÖSTER (background yok)
+        // Toast göster
         if (toast != null)
             toast.Show(newWeaponSprite, toastTitle);
     }
