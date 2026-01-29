@@ -1609,7 +1609,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ZombieAttackDamageTimed
   hitDelay: 0.6
-  attackCooldown: 1
+  attackCooldown: 0.5
   audioSource: {fileID: 479018362599508000}
   attackSound: {fileID: 8300000, guid: ea2ccac8ae717824a9d9fc9b00bb85a9, type: 3}
   hitRadius: 2

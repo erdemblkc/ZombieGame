@@ -1,16 +1,15 @@
 using UnityEngine;
 
-public class GlobalGameState : MonoBehaviour
+public static class GlobalGameState
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
+    // Oyun yeniden baþlayýnca hatýrlanacak veriler
+    public static int SavedWave = 1;
+    public static bool IsWeaponUpgraded = false;
 
-    // Update is called once per frame
-    void Update()
+    // Oyunu tamamen sýfýrlamak istersen bunu çaðýrýrýz (Örn: Ana menüden girince)
+    public static void ResetData()
     {
-        
+        SavedWave = 1;
+        IsWeaponUpgraded = false;
     }
 }

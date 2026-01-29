@@ -10,8 +10,8 @@ public class GunShooter : MonoBehaviour
     public Transform cameraPivot;
     public TextMeshProUGUI ammoText;
 
-    [Header("Audio Source (YENİ)")]
-    public AudioSource audioSource; // Player üzerindeki AudioSource'u buraya ata
+    [Header("Audio Source")]
+    public AudioSource audioSource; // Player üzerindeki AudioSource
 
     [Header("Guns (Hierarchy Children)")]
     public GameObject gunOld;
@@ -32,9 +32,18 @@ public class GunShooter : MonoBehaviour
     float nextFireTime;
     bool isReloading;
 
-    // ... (Eski API fonksiyonları korundu) ...
-    public void SetNewGunEnabled(bool enabled) { if (enabled) UpgradeToNewGun(); else SwitchToOldGun(); }
+    // --- SİLAH AÇMA FONKSİYONU (Hafızalı) ---
+    public void SetNewGunEnabled(bool enabled)
+    {
+        // Hafızaya kaydet
+        if (enabled) GlobalGameState.IsWeaponUpgraded = true;
+
+        if (enabled) UpgradeToNewGun();
+        else SwitchToOldGun();
+    }
+
     public void AddReserveAmmo(int amount) { amount = Mathf.Max(0, amount); reserveAmmo += amount; UpdateAmmoUI(); }
+
     public void ApplyDamageMultiplier(float mul)
     {
         mul = Mathf.Max(0.1f, mul);
@@ -48,7 +57,6 @@ public class GunShooter : MonoBehaviour
         if (anim == null) { anim = GetComponentInChildren<Animator>(); if (anim == null) anim = GetComponent<Animator>(); }
         if (cameraPivot == null && Camera.main != null) cameraPivot = Camera.main.transform;
 
-        // Otomatik AudioSource bul
         if (audioSource == null) audioSource = GetComponent<AudioSource>();
         if (audioSource == null) audioSource = GetComponentInParent<AudioSource>();
 
@@ -61,6 +69,22 @@ public class GunShooter : MonoBehaviour
         SetReloadCircleVisible(false);
         UpdateAmmoUI();
         if (anim != null) anim.SetBool(aimingParam, false);
+
+        // --- HAFIZA KONTROLÜ 1 (Awake) ---
+        if (GlobalGameState.IsWeaponUpgraded)
+        {
+            UpgradeToNewGun();
+        }
+    }
+
+    // --- YENİ EKLENEN KISIM (Start) ---
+    // Bu kısım, Awake'ten sonra devreye girer ve animasyonların silahı bozmasını engeller.
+    void Start()
+    {
+        if (GlobalGameState.IsWeaponUpgraded)
+        {
+            UpgradeToNewGun();
+        }
     }
 
     void Update()
@@ -137,7 +161,7 @@ public class GunShooter : MonoBehaviour
         // --- SES: ATEŞ ---
         if (audioSource != null && currentWeapon.fireSound != null)
         {
-            audioSource.pitch = Random.Range(0.9f, 1.1f); // Robotik sesi önlemek için hafif rastgelelik
+            audioSource.pitch = Random.Range(0.9f, 1.1f);
             audioSource.PlayOneShot(currentWeapon.fireSound, currentWeapon.fireVolume);
         }
 
@@ -167,8 +191,19 @@ public class GunShooter : MonoBehaviour
     void UpdateAmmoUI() { if (ammoText != null) ammoText.text = $"{currentAmmo} / {reserveAmmo}"; }
     void SetReloadCircleVisible(bool v) { if (reloadCircle != null) { reloadCircle.gameObject.SetActive(v); if (v) reloadCircle.fillAmount = 0f; } }
 
-    public void UpgradeToNewGun() { if (gunOld != null) gunOld.SetActive(false); if (gunNew != null) gunNew.SetActive(true); if (gunNew != null) SetWeapon(gunNew); }
-    public void SwitchToOldGun() { if (gunNew != null) gunNew.SetActive(false); if (gunOld != null) gunOld.SetActive(true); if (gunOld != null) SetWeapon(gunOld); }
+    public void UpgradeToNewGun()
+    {
+        if (gunOld != null) gunOld.SetActive(false);
+        if (gunNew != null) gunNew.SetActive(true);
+        if (gunNew != null) SetWeapon(gunNew);
+    }
+
+    public void SwitchToOldGun()
+    {
+        if (gunNew != null) gunNew.SetActive(false);
+        if (gunOld != null) gunOld.SetActive(true);
+        if (gunOld != null) SetWeapon(gunOld);
+    }
 
     void SetWeapon(GameObject gunObj)
     {
