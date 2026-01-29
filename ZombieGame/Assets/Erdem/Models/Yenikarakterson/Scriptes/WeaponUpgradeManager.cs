@@ -16,7 +16,7 @@ public class WeaponUpgradeManager : MonoBehaviour
     public GunShooter shooter; // GunShooter scriptini buraya sürükle
 
     [Header("Text Settings")]
-    public string missionTextFormat = "Silah parçaları topla {0}/{1}";
+    public string missionTextFormat = "Upgrade your weapon! Collect parts {0}/{1}";
 
     [Header("Weapons - Assign in Inspector")]
     public GameObject gunOld;
