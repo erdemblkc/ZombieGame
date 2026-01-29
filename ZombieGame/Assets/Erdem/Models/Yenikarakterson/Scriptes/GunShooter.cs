@@ -8,13 +8,15 @@ public class GunShooter : MonoBehaviour
     [Header("Refs")]
     public Animator anim;
     public Transform cameraPivot;
-    // public Transform muzzle; // KALDIRILDI: Artık silahtan alınıyor.
     public TextMeshProUGUI ammoText;
 
+    [Header("Audio Source (YENİ)")]
+    public AudioSource audioSource; // Player üzerindeki AudioSource'u buraya ata
+
     [Header("Guns (Hierarchy Children)")]
-    public GameObject gunOld;   // Gun_Old
-    public GameObject gunNew;   // Gun_New
-    public WeaponStats currentWeapon; // aktif silahın stats'ı
+    public GameObject gunOld;
+    public GameObject gunNew;
+    public WeaponStats currentWeapon;
 
     [Header("Reload UI")]
     public Image reloadCircle;
@@ -27,73 +29,37 @@ public class GunShooter : MonoBehaviour
     // ---- runtime ----
     int currentAmmo;
     int reserveAmmo;
-
     float nextFireTime;
     bool isReloading;
 
-    // =========================
-    // API (Dışarıdan çağrılanlar)
-    // =========================
-
-    public void SetNewGunEnabled(bool enabled)
-    {
-        if (enabled) UpgradeToNewGun();
-        else SwitchToOldGun();
-    }
-
-    public void AddReserveAmmo(int amount)
-    {
-        amount = Mathf.Max(0, amount);
-        reserveAmmo += amount;
-        UpdateAmmoUI();
-    }
-
+    // ... (Eski API fonksiyonları korundu) ...
+    public void SetNewGunEnabled(bool enabled) { if (enabled) UpgradeToNewGun(); else SwitchToOldGun(); }
+    public void AddReserveAmmo(int amount) { amount = Mathf.Max(0, amount); reserveAmmo += amount; UpdateAmmoUI(); }
     public void ApplyDamageMultiplier(float mul)
     {
         mul = Mathf.Max(0.1f, mul);
-
         if (currentWeapon != null) currentWeapon.damage *= mul;
-
-        // Pasif silahların da hasarını güncelle
-        if (gunOld != null)
-        {
-            var ws = gunOld.GetComponent<WeaponStats>();
-            if (ws != null) ws.damage *= mul;
-        }
-        if (gunNew != null)
-        {
-            var ws = gunNew.GetComponent<WeaponStats>();
-            if (ws != null) ws.damage *= mul;
-        }
+        if (gunOld != null) { var ws = gunOld.GetComponent<WeaponStats>(); if (ws != null) ws.damage *= mul; }
+        if (gunNew != null) { var ws = gunNew.GetComponent<WeaponStats>(); if (ws != null) ws.damage *= mul; }
     }
-
-    // =========================
-    // UNITY
-    // =========================
 
     void Awake()
     {
-        if (anim == null)
-        {
-            anim = GetComponentInChildren<Animator>();
-            if (anim == null) anim = GetComponent<Animator>();
-        }
+        if (anim == null) { anim = GetComponentInChildren<Animator>(); if (anim == null) anim = GetComponent<Animator>(); }
+        if (cameraPivot == null && Camera.main != null) cameraPivot = Camera.main.transform;
 
-        if (cameraPivot == null && Camera.main != null)
-            cameraPivot = Camera.main.transform;
+        // Otomatik AudioSource bul
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
+        if (audioSource == null) audioSource = GetComponentInParent<AudioSource>();
 
-        // Başlangıçta aktif silah seçimi
         if (currentWeapon == null)
         {
-            if (gunNew != null && gunNew.activeInHierarchy)
-                SetWeapon(gunNew);
-            else if (gunOld != null)
-                SetWeapon(gunOld);
+            if (gunNew != null && gunNew.activeInHierarchy) SetWeapon(gunNew);
+            else if (gunOld != null) SetWeapon(gunOld);
         }
 
         SetReloadCircleVisible(false);
         UpdateAmmoUI();
-
         if (anim != null) anim.SetBool(aimingParam, false);
     }
 
@@ -101,35 +67,16 @@ public class GunShooter : MonoBehaviour
     {
         if (currentWeapon == null) return;
 
-        // AIM
-        if (anim != null)
-            anim.SetBool(aimingParam, Input.GetMouseButton(1));
+        if (anim != null) anim.SetBool(aimingParam, Input.GetMouseButton(1));
 
-        if (isReloading)
-        {
-            if (anim != null) anim.ResetTrigger(shootParam);
-            return;
-        }
+        if (isReloading) { if (anim != null) anim.ResetTrigger(shootParam); return; }
 
-        // Reload Input
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            TryReload();
-            return;
-        }
+        if (Input.GetKeyDown(KeyCode.R)) { TryReload(); return; }
+        if (currentAmmo <= 0) { if (currentWeapon.autoReloadWhenEmpty) TryReload(); return; }
 
-        // Auto Reload
-        if (currentAmmo <= 0)
-        {
-            if (currentWeapon.autoReloadWhenEmpty) TryReload();
-            return;
-        }
-
-        // Shoot Input
         if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
         {
             if (currentAmmo <= 0) return;
-
             nextFireTime = Time.time + currentWeapon.fireCooldown;
             currentAmmo--;
             UpdateAmmoUI();
@@ -157,13 +104,18 @@ public class GunShooter : MonoBehaviour
 
         if (showReloadCircle) SetReloadCircleVisible(true);
 
+        // --- SES: RELOAD ---
+        if (audioSource != null && currentWeapon.reloadSound != null)
+        {
+            audioSource.pitch = 1.0f;
+            audioSource.PlayOneShot(currentWeapon.reloadSound);
+        }
+
         float t = 0f;
         while (t < reloadTime)
         {
             t += Time.deltaTime;
-            if (reloadCircle != null)
-                reloadCircle.fillAmount = Mathf.Clamp01(t / reloadTime);
-
+            if (reloadCircle != null) reloadCircle.fillAmount = Mathf.Clamp01(t / reloadTime);
             if (anim != null) anim.ResetTrigger(shootParam);
             yield return null;
         }
@@ -180,42 +132,31 @@ public class GunShooter : MonoBehaviour
 
     void ShootProjectile()
     {
-        if (isReloading) return;
-        if (cameraPivot == null || currentWeapon == null) return;
+        if (isReloading || cameraPivot == null || currentWeapon == null) return;
 
-        // YENİ: Muzzle'ı aktif silahtan al
-        Transform firePoint = currentWeapon.muzzle;
-        if (firePoint == null)
+        // --- SES: ATEŞ ---
+        if (audioSource != null && currentWeapon.fireSound != null)
         {
-            Debug.LogError($"HATA: {currentWeapon.name} objesindeki WeaponStats scriptinde 'Muzzle' boş! Lütfen atama yap.");
-            return;
+            audioSource.pitch = Random.Range(0.9f, 1.1f); // Robotik sesi önlemek için hafif rastgelelik
+            audioSource.PlayOneShot(currentWeapon.fireSound, currentWeapon.fireVolume);
         }
+
+        Transform firePoint = currentWeapon.muzzle;
+        if (firePoint == null) return;
 
         Vector3 dir = cameraPivot.forward;
         Vector3 spawnPos = firePoint.position;
         Quaternion spawnRot = Quaternion.LookRotation(dir, Vector3.up);
 
-        // Debug için konsola yazalım (Sorun çözülünce silebilirsin)
-        // Debug.Log($"Ateşlenen: {currentWeapon.name} | Hasar: {currentWeapon.damage} | DoubleMode: {currentWeapon.useDoubleBullet}");
-
-        // --- DOUBLE BULLET ---
-        if (currentWeapon.useDoubleBullet)
+        if (currentWeapon.useDoubleBullet && currentWeapon.doubleBulletPrefab != null)
         {
-            if (currentWeapon.doubleBulletPrefab != null)
-            {
-                DoubleBullet db = Instantiate(currentWeapon.doubleBulletPrefab, spawnPos, spawnRot);
-                // Namlu çıkışlarını aktar
-                db.leftBarrel = currentWeapon.leftBarrel;
-                db.rightBarrel = currentWeapon.rightBarrel;
-                // Hasarı aktar
-                db.damage = currentWeapon.damage;
-                db.Fire(dir);
-            }
-            return;
+            DoubleBullet db = Instantiate(currentWeapon.doubleBulletPrefab, spawnPos, spawnRot);
+            db.leftBarrel = currentWeapon.leftBarrel;
+            db.rightBarrel = currentWeapon.rightBarrel;
+            db.damage = currentWeapon.damage;
+            db.Fire(dir);
         }
-
-        // --- SINGLE BULLET ---
-        if (currentWeapon.singleBulletPrefab != null)
+        else if (currentWeapon.singleBulletPrefab != null)
         {
             Bullet b = Instantiate(currentWeapon.singleBulletPrefab, spawnPos, spawnRot);
             b.damage = currentWeapon.damage;
@@ -223,51 +164,19 @@ public class GunShooter : MonoBehaviour
         }
     }
 
-    void UpdateAmmoUI()
-    {
-        if (ammoText != null)
-            ammoText.text = $"{currentAmmo} / {reserveAmmo}";
-    }
+    void UpdateAmmoUI() { if (ammoText != null) ammoText.text = $"{currentAmmo} / {reserveAmmo}"; }
+    void SetReloadCircleVisible(bool v) { if (reloadCircle != null) { reloadCircle.gameObject.SetActive(v); if (v) reloadCircle.fillAmount = 0f; } }
 
-    void SetReloadCircleVisible(bool v)
-    {
-        if (reloadCircle != null)
-        {
-            reloadCircle.gameObject.SetActive(v);
-            if (v) reloadCircle.fillAmount = 0f;
-        }
-    }
-
-    public void UpgradeToNewGun()
-    {
-        if (gunOld != null) gunOld.SetActive(false);
-        if (gunNew != null) gunNew.SetActive(true);
-
-        if (gunNew != null) SetWeapon(gunNew);
-    }
-
-    public void SwitchToOldGun()
-    {
-        if (gunNew != null) gunNew.SetActive(false);
-        if (gunOld != null) gunOld.SetActive(true);
-
-        if (gunOld != null) SetWeapon(gunOld);
-    }
+    public void UpgradeToNewGun() { if (gunOld != null) gunOld.SetActive(false); if (gunNew != null) gunNew.SetActive(true); if (gunNew != null) SetWeapon(gunNew); }
+    public void SwitchToOldGun() { if (gunNew != null) gunNew.SetActive(false); if (gunOld != null) gunOld.SetActive(true); if (gunOld != null) SetWeapon(gunOld); }
 
     void SetWeapon(GameObject gunObj)
     {
         if (gunObj == null) return;
         WeaponStats newStats = gunObj.GetComponent<WeaponStats>();
-
-        if (newStats == null)
-        {
-            Debug.LogError($"WeaponStats eksik: {gunObj.name}");
-            return;
-        }
+        if (newStats == null) return;
 
         currentWeapon = newStats;
-
-        // Mermi bilgilerini yenile
         currentAmmo = currentWeapon.magazineSize;
         reserveAmmo = currentWeapon.reserveStart;
         isReloading = false;

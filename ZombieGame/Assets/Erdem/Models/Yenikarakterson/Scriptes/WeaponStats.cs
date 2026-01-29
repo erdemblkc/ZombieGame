@@ -2,9 +2,13 @@ using UnityEngine;
 
 public class WeaponStats : MonoBehaviour
 {
-    [Header("Firing Point (ÖNEMLÝ)")]
-    // Her silahýn kendi namlu ucunu buraya atayacaðýz
+    [Header("Firing Point")]
     public Transform muzzle;
+
+    [Header("Audio (YENÝ)")]
+    public AudioClip fireSound;   // Ateþ sesi dosyasýný buraya sürükle
+    public AudioClip reloadSound; // Þarjör sesi dosyasýný buraya sürükle
+    [Range(0, 1)] public float fireVolume = 0.8f;
 
     [Header("Damage & Fire")]
     public float damage = 25f;
@@ -21,7 +25,7 @@ public class WeaponStats : MonoBehaviour
     public Bullet singleBulletPrefab;
     public DoubleBullet doubleBulletPrefab;
 
-    [Header("Optional barrels (for DoubleBullet)")]
+    [Header("Optional barrels")]
     public Transform leftBarrel;
     public Transform rightBarrel;
 }

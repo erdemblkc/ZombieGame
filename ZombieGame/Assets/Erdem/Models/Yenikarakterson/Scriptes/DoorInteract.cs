@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[RequireComponent(typeof(AudioSource))] // Otomatik AudioSource ekler
 public class DoorInteract : MonoBehaviour, IInteractable
 {
     [Header("Door Rotation")]
@@ -7,6 +8,11 @@ public class DoorInteract : MonoBehaviour, IInteractable
     [Tooltip("Kapý kaç derece açýlsýn (pozitif býrak, yönü kod belirliyor)")]
     public float openAngle = 90f;
     public float speed = 6f;
+
+    [Header("Audio (YENÝ)")]
+    public AudioSource audioSource;
+    public AudioClip openSound;  // Gýcýrtý sesi
+    public AudioClip closeSound; // Kapanma sesi
 
     [Header("UI Prompt")]
     public string promptClosed = "E - Open Door";
@@ -16,12 +22,15 @@ public class DoorInteract : MonoBehaviour, IInteractable
     private Quaternion closedRot;
     private Quaternion openRot;
 
-    // Interact eden player’ý hatýrlamak için (kapýyý hangi taraftan açacaðýz)
+    // Interact eden player’ý hatýrlamak için
     private Transform lastInteractor;
 
     void Awake()
     {
         if (hinge == null) hinge = transform;
+
+        // Otomatik AudioSource bulma
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
 
         closedRot = hinge.localRotation;
         openRot = closedRot;
@@ -48,6 +57,7 @@ public class DoorInteract : MonoBehaviour, IInteractable
 
         if (!isOpen)
         {
+            // --- KAPIYI AÇ ---
             float side = 1f;
 
             if (lastInteractor != null)
@@ -58,10 +68,27 @@ public class DoorInteract : MonoBehaviour, IInteractable
 
             openRot = closedRot * Quaternion.Euler(0f, openAngle * side, 0f);
             isOpen = true;
+
+            // Ses Çal
+            PlaySound(openSound);
         }
         else
         {
+            // --- KAPIYI KAPAT ---
             isOpen = false;
+
+            // Ses Çal
+            PlaySound(closeSound);
+        }
+    }
+
+    // Ses çalma yardýmcýsý (Pitch varyasyonu ile)
+    void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            audioSource.pitch = Random.Range(0.9f, 1.1f); // Hafif ton farký (doðallýk için)
+            audioSource.PlayOneShot(clip);
         }
     }
 }

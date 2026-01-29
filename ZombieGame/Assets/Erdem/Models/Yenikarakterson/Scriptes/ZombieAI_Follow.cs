@@ -9,11 +9,7 @@ public class ZombieAI_Follow : MonoBehaviour
 
     [Header("Ranges")]
     public float chaseRange = 50f;
-
-    [Tooltip("Bu mesafenin içine girince dur + saldýr.")]
     public float attackRange = 1.8f;
-
-    [Tooltip("Titremeyi önler: bu mesafenin üstüne çýkýnca tekrar kovalar.")]
     public float resumeChaseRange = 2.3f;
 
     [Header("Attack")]
@@ -29,9 +25,23 @@ public class ZombieAI_Follow : MonoBehaviour
     public float turnSpeed = 12f;
     public float visualYawOffset = 180f;
 
+    [Header("Zombie Audio (Only Idle & Step)")]
+    public AudioSource audioSource;
+    // public AudioClip attackSound; // <--- SÝLDÝK (Diðer scripte taþýdýk)
+    public AudioClip[] idleSounds;
+    public AudioClip[] stepSounds;
+
+    [Header("Audio Settings")]
+    public float idleSoundIntervalMin = 3f;
+    public float idleSoundIntervalMax = 7f;
+    public float stepInterval = 0.5f;
+
     private NavMeshAgent agent;
     private bool inAttackZone;
     private float nextAttackTime;
+
+    private float nextIdleTime;
+    private float stepTimer;
 
     void Awake()
     {
@@ -39,13 +49,10 @@ public class ZombieAI_Follow : MonoBehaviour
         agent.autoBraking = true;
         agent.stoppingDistance = 0f;
 
-        if (animator == null)
-            animator = GetComponentInChildren<Animator>();
+        if (animator == null) animator = GetComponentInChildren<Animator>();
+        if (visual == null && transform.childCount > 0) visual = transform.GetChild(0);
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
 
-        if (visual == null && transform.childCount > 0)
-            visual = transform.GetChild(0);
-
-        // Uyarý
         if (GetComponent<ZombieAttackDamageTimed>() == null)
             Debug.LogWarning($"[{name}] ZombieAttackDamageTimed component is missing on this zombie!");
     }
@@ -57,14 +64,20 @@ public class ZombieAI_Follow : MonoBehaviour
             GameObject p = GameObject.FindGameObjectWithTag("Player");
             if (p != null) target = p.transform;
         }
+        nextIdleTime = Time.time + Random.Range(0f, 2f);
     }
 
     void Update()
     {
+        // --- IDLE SOUND ---
+        if (Time.time >= nextIdleTime && !inAttackZone)
+        {
+            PlayRandomIdleSound();
+            nextIdleTime = Time.time + Random.Range(idleSoundIntervalMin, idleSoundIntervalMax);
+        }
 
         if (target == null) return;
         if (!agent.isOnNavMesh) return;
-
 
         Vector3 a = transform.position; a.y = 0f;
         Vector3 b = target.position; b.y = 0f;
@@ -90,6 +103,8 @@ public class ZombieAI_Follow : MonoBehaviour
                 animator.ResetTrigger(attackTrigger);
                 animator.SetTrigger(attackTrigger);
 
+                // --- BURADAKÝ SES KODUNU KALDIRDIK ---
+                // Sadece mekanik saldýrýyý baþlatýyoruz:
                 GetComponent<ZombieAttackDamageTimed>()?.DoAttack();
 
                 nextAttackTime = Time.time + attackCooldown;
@@ -99,38 +114,47 @@ public class ZombieAI_Follow : MonoBehaviour
         {
             agent.isStopped = false;
             agent.SetDestination(target.position);
-
             bool walking = agent.velocity.sqrMagnitude > 0.05f;
             SetWalking(walking);
 
+            if (walking)
+            {
+                stepTimer -= Time.deltaTime;
+                if (stepTimer <= 0f)
+                {
+                    PlayStepSound();
+                    stepTimer = stepInterval;
+                }
+            }
             RotateVisualToVelocity();
         }
     }
 
-    bool CanAnimate()
+    void PlayRandomIdleSound()
     {
-        return animator != null && animator.runtimeAnimatorController != null;
+        if (audioSource == null || idleSounds == null || idleSounds.Length == 0) return;
+        if (audioSource.isPlaying) return;
+
+        AudioClip clip = idleSounds[Random.Range(0, idleSounds.Length)];
+        audioSource.pitch = Random.Range(0.8f, 1.0f);
+        audioSource.PlayOneShot(clip);
     }
 
-    void StopAgent()
+    void PlayStepSound()
     {
-        agent.isStopped = true;
-        agent.ResetPath();
+        if (audioSource == null || stepSounds == null || stepSounds.Length == 0) return;
+        AudioClip clip = stepSounds[Random.Range(0, stepSounds.Length)];
+        audioSource.PlayOneShot(clip, 0.4f);
     }
 
-    void SetWalking(bool value)
-    {
-        if (CanAnimate())
-            animator.SetBool(isWalkingBool, value);
-    }
-
+    bool CanAnimate() { return animator != null && animator.runtimeAnimatorController != null; }
+    void StopAgent() { agent.isStopped = true; agent.ResetPath(); }
+    void SetWalking(bool value) { if (CanAnimate()) animator.SetBool(isWalkingBool, value); }
     void RotateVisualToVelocity()
     {
         if (visual == null) return;
-
         Vector3 v = agent.velocity;
         v.y = 0f;
-
         if (v.sqrMagnitude > 0.01f)
         {
             Quaternion lookRot = Quaternion.LookRotation(v.normalized, Vector3.up);

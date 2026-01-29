@@ -1,12 +1,21 @@
 ﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UI;
 
 public class ZombieHealth1 : MonoBehaviour, IDamageable
 {
     [Header("Health")]
     public float maxHealth = 100f;
     public float currentHealth = 100f;
+
+    [Header("Audio - Death (YENİ)")]
+    public AudioClip deathVoiceSound; // Zombinin son nefesi/böğürmesi
+    [Range(0f, 1f)] public float voiceVolume = 1.0f;
+
+    public AudioClip bodyFallSound;   // Lego parçalarının dağılma sesi
+    [Range(0f, 1f)] public float fallVolume = 1.0f;
+
     [Header("HP Bar")]
     public ZombieHealthBarUI hpBarPrefab;
     public Transform hpBarTarget;
@@ -20,7 +29,6 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
     [Header("Death Timing")]
     [Tooltip("Die anim bitince yerde kaç saniye kalsın?")]
     public float stayOnGroundTime = 0.6f;
-
 
     [Tooltip("Die anim klibinin süresi. 0 bırakılırsa despawnDelay kullanılır.")]
     public float dieAnimDuration = 0f;
@@ -45,7 +53,6 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
             hpBar.target = (hpBarTarget != null) ? hpBarTarget : transform;
             hpBar.SetValue(currentHealth, maxHealth);
         }
-
     }
 
     public void TakeDamage(float amount)
@@ -63,8 +70,6 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
         GetComponent<ZombieHitFlash>()?.Flash();
         GetComponent<ZombieHitReact>()?.React(Camera.main != null ? Camera.main.transform.position : transform.position);
 
-
-
         if (currentHealth <= 0f)
             Die();
     }
@@ -72,6 +77,21 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
     void Die()
     {
         isDead = true;
+
+        // --- ÇİFT SES SİSTEMİ ---
+
+        // 1. Zombi Sesi (Böğürme)
+        if (deathVoiceSound != null)
+        {
+            // PlayClipAtPoint, obje yok olsa bile sesi o noktada (3D) çalar.
+            AudioSource.PlayClipAtPoint(deathVoiceSound, transform.position, voiceVolume);
+        }
+
+        // 2. Dağılma Sesi (Plastik parçalar)
+        if (bodyFallSound != null)
+        {
+            AudioSource.PlayClipAtPoint(bodyFallSound, transform.position, fallVolume);
+        }
 
         // AI/Agent kapat
         var ai = GetComponent<ZombieAI_Follow>();

@@ -80,6 +80,7 @@ GameObject:
   - component: {fileID: 2058966126385750769}
   - component: {fileID: -3708551635586975146}
   - component: {fileID: 3956654236668330273}
+  - component: {fileID: 5766225850861046346}
   m_Layer: 0
   m_Name: ZombieRoot
   m_TagString: Untagged
@@ -172,6 +173,18 @@ MonoBehaviour:
   visual: {fileID: 0}
   turnSpeed: 12
   visualYawOffset: 180
+  audioSource: {fileID: 5766225850861046346}
+  idleSounds:
+  - {fileID: 8300000, guid: 1daab7f1ba7273b4ca79a34f3da87142, type: 3}
+  - {fileID: 8300000, guid: 8123812e724a3db47b0eb1e3f39f05de, type: 3}
+  - {fileID: 8300000, guid: 9f96f7d11c5c9a14b86884d22fc2d1e4, type: 3}
+  stepSounds:
+  - {fileID: 8300000, guid: f1c3595b6bff0ee4ea9940c08243ce50, type: 3}
+  - {fileID: 8300000, guid: 8f9b8ce8b0fc6834eb2d875b8602ce3f, type: 3}
+  - {fileID: 8300000, guid: 607e5ef3571146145a560db3bbccab39, type: 3}
+  idleSoundIntervalMin: 3
+  idleSoundIntervalMax: 7
+  stepInterval: 0.5
 --- !u!114 &1021429847570741988
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -186,6 +199,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ZombieHealth1
   maxHealth: 100
   currentHealth: 100
+  deathVoiceSound: {fileID: 8300000, guid: 198dc0104eaf3774180d2dd420a494d3, type: 3}
+  voiceVolume: 0.802
+  bodyFallSound: {fileID: 8300000, guid: 93beff4d7ea15bc44b0215d7771ba3e0, type: 3}
+  fallVolume: 0.802
   hpBarPrefab: {fileID: 1997378734796845009, guid: 559529f0934a51846a6598f8ff46c450, type: 3}
   hpBarTarget: {fileID: 1628958403854293450}
   animator: {fileID: 0}
@@ -239,6 +256,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ZombieAttackDamageTimed
   hitDelay: 0.6
   attackCooldown: 0.5
+  audioSource: {fileID: 5766225850861046346}
+  attackSound: {fileID: 8300000, guid: ea2ccac8ae717824a9d9fc9b00bb85a9, type: 3}
   hitRadius: 0.74
   hitDistanceForward: 0
   playerLayer:
@@ -262,6 +281,103 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ZombieFaceFlashByMaterial
   faceBaseMaterial: {fileID: 2100000, guid: 6dae34080a485b244a68d802d5e7639e, type: 2}
   angryMaterial: {fileID: 2100000, guid: f23576a0a8a644148a634ea263a78a06, type: 2}
+--- !u!82 &5766225850861046346
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8765259722836522806}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 30
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1001 &889157365080577271
 PrefabInstance:
   m_ObjectHideFlags: 0

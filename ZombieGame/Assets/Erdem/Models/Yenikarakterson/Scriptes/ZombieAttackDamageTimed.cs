@@ -7,19 +7,17 @@ public class ZombieAttackDamageTimed : MonoBehaviour
     public float hitDelay = 0.6f;
     public float attackCooldown = 1.0f;
 
+    [Header("Audio (YENİ - Buraya Taşındı)")]
+    public AudioSource audioSource; // Inspector'dan ata (Zombi üzerindeki)
+    public AudioClip attackSound;   // Saldırı sesini buraya koy
+
     [Header("Hit Check")]
     public float hitRadius = 1.2f;
-
-    [Tooltip("HitOrigin yoksa fallback olarak transform.forward ile öne kaydırır.")]
     public float hitDistanceForward = 1.1f;
-
     public LayerMask playerLayer;
 
     [Header("Hit Origin (Recommended)")]
-    [Tooltip("Boş bırakılırsa, transform.position + height/forward ile hesaplar.")]
     public Transform hitOrigin;
-
-    [Tooltip("HitOrigin boşsa kullanılacak Y offset.")]
     public float hitHeightOffset = 1.0f;
 
     [Header("Damage")]
@@ -30,6 +28,12 @@ public class ZombieAttackDamageTimed : MonoBehaviour
 
     private bool _canAttack = true;
     private Coroutine _co;
+
+    void Awake()
+    {
+        // Eğer AudioSource atanmadıysa otomatik bulmaya çalış
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
+    }
 
     public void DoAttack()
     {
@@ -46,34 +50,34 @@ public class ZombieAttackDamageTimed : MonoBehaviour
         if (debugLogs)
             Debug.Log($"[{name}] Attack started. Will hit after {hitDelay:0.00}s");
 
+        // --- BEKLEME (Animasyonun vuruş anına gelmesi) ---
         yield return new WaitForSeconds(hitDelay);
 
+        // --- TAM VURDUĞU AN SES ÇAL ---
+        if (audioSource != null && attackSound != null)
+        {
+            audioSource.pitch = Random.Range(0.9f, 1.1f); // Biraz varyasyon
+            audioSource.PlayOneShot(attackSound);
+        }
+
+        // Hasarı ver
         DealDamage();
 
+        // Geri kalan cooldown süresini bekle
         yield return new WaitForSeconds(attackCooldown);
         _canAttack = true;
     }
 
     private Vector3 GetHitCenter()
     {
-        // 1) Eğer HitOrigin atanmışsa: direkt onu kullan
-        if (hitOrigin != null)
-            return hitOrigin.position;
-
-        // 2) Yoksa: pivot + yukarı offset + ileri offset
-        return transform.position
-             + Vector3.up * hitHeightOffset
-             + transform.forward * hitDistanceForward;
+        if (hitOrigin != null) return hitOrigin.position;
+        return transform.position + Vector3.up * hitHeightOffset + transform.forward * hitDistanceForward;
     }
 
     private void DealDamage()
     {
         Vector3 center = GetHitCenter();
-
         Collider[] hits = Physics.OverlapSphere(center, hitRadius, playerLayer, QueryTriggerInteraction.Ignore);
-
-        if (debugLogs)
-            Debug.Log($"[{name}] Hit check: found {hits.Length} colliders.");
 
         for (int i = 0; i < hits.Length; i++)
         {
@@ -83,13 +87,8 @@ public class ZombieAttackDamageTimed : MonoBehaviour
                 receiver.TakeDamage(damage);
                 DamageVignetteUI.Instance?.Play();
 
-
                 var pc = hits[i].GetComponent<PlayerController2>();
-                if (pc != null)
-                    pc.AddKnockbackFrom(transform.position);
-
-                if (debugLogs)
-                    Debug.Log($"[{name}] Hit player: {hits[i].name}");
+                if (pc != null) pc.AddKnockbackFrom(transform.position);
 
                 return;
             }
