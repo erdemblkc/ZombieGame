@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls Assets/*.cs)",
+      "Bash(cd:*)",
+      "Bash(find Assets/Erdem/Models/Yenikarakterson/Scriptes -name *.cs)",
+      "Bash(find Assets/Alpin/Scripts -name *.cs)"
+    ]
+  }
+}
