@@ -1,6 +1,6 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class HitmarkerUI : MonoBehaviour
 {
@@ -18,9 +18,6 @@ public class HitmarkerUI : MonoBehaviour
     public float hitShowTime = 0.06f;
     public float hitFadeOut = 0.10f;
 
-    Coroutine popCo;
-    Coroutine hitCo;
-
     void Awake()
     {
         Instance = this;
@@ -34,7 +31,7 @@ public class HitmarkerUI : MonoBehaviour
         }
     }
 
-    // VURUNCA ÇAÐIR
+    // VURUNCA Ã‡AÄžIR
     public void OnHit()
     {
         PlayCrosshairPop();
@@ -45,65 +42,23 @@ public class HitmarkerUI : MonoBehaviour
     {
         if (crosshair == null) return;
 
-        if (popCo != null) StopCoroutine(popCo);
-        popCo = StartCoroutine(PopRoutine(crosshair.rectTransform));
-    }
-
-    IEnumerator PopRoutine(RectTransform rt)
-    {
-        Vector3 baseScale = Vector3.one;
-        rt.localScale = baseScale;
-
-        // hýzlý büyüt
-        rt.localScale = baseScale * popScale;
-        yield return new WaitForSeconds(popTime * 0.5f);
-
-        // geri dön
-        float t = 0f;
-        float dur = popTime * 0.5f;
-        while (t < dur)
-        {
-            t += Time.deltaTime;
-            float a = Mathf.Clamp01(t / dur);
-            rt.localScale = Vector3.Lerp(baseScale * popScale, baseScale, a);
-            yield return null;
-        }
-        rt.localScale = baseScale;
-        popCo = null;
+        crosshair.rectTransform.DOKill();
+        crosshair.rectTransform.localScale = Vector3.one;
+        crosshair.rectTransform.DOPunchScale(Vector3.one * (popScale - 1f), popTime, 1, 0.5f);
     }
 
     void PlayHitmarker()
     {
         if (hitMarker == null) return;
 
-        if (hitCo != null) StopCoroutine(hitCo);
-        hitCo = StartCoroutine(HitRoutine());
-    }
-
-    IEnumerator HitRoutine()
-    {
+        hitMarker.DOKill();
         hitMarker.gameObject.SetActive(true);
-
-        // reset alpha
-        var c = hitMarker.color;
-        c.a = 1f;
-        hitMarker.color = c;
-
-        // kýsa süre göster
-        yield return new WaitForSeconds(hitShowTime);
-
-        // fade out
-        float t = 0f;
-        while (t < hitFadeOut)
-        {
-            t += Time.deltaTime;
-            float a = 1f - Mathf.Clamp01(t / hitFadeOut);
-            c.a = a;
-            hitMarker.color = c;
-            yield return null;
-        }
-
-        hitMarker.gameObject.SetActive(false);
-        hitCo = null;
+        hitMarker.DOFade(1f, 0f)
+            .OnComplete(() =>
+                hitMarker.DOFade(0f, hitFadeOut)
+                    .SetDelay(hitShowTime)
+                    .SetEase(Ease.InQuad)
+                    .OnComplete(() => hitMarker.gameObject.SetActive(false))
+            );
     }
 }

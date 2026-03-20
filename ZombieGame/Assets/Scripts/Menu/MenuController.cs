@@ -1,37 +1,45 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class MenuController : MonoBehaviour
 {
     [Header("UI")]
-    public GameObject menuRoot;     // Play+Options'ýn bulunduðu panel (veya tüm canvas grubu)
+    public GameObject menuRoot;
     public Button playButton;
 
     [Header("Camera Animation")]
-    public Animator cameraAnimator; // Kameradaki Animator
+    public Animator cameraAnimator;
     public float introDuration = 15f;
 
     [Header("Disable Gameplay Until Play")]
-    public Behaviour[] disableOnStart; // PlayerController, MouseLook vs scriptlerini buraya sürükle
+    public Behaviour[] disableOnStart;
+
+    [Header("Animation")]
+    public float menuFadeInDuration = 0.4f;
+    public float menuFadeOutDuration = 0.3f;
+
+    CanvasGroup _menuCG;
 
     void Start()
     {
-        // Menü açýk
-        if (menuRoot) menuRoot.SetActive(true);
+        if (menuRoot)
+        {
+            menuRoot.SetActive(true);
+            _menuCG = menuRoot.GetComponent<CanvasGroup>();
+            if (_menuCG == null) _menuCG = menuRoot.AddComponent<CanvasGroup>();
 
-        // Mouse serbest ve görünür
+            _menuCG.alpha = 0f;
+            _menuCG.DOFade(1f, menuFadeInDuration).SetEase(Ease.OutQuad);
+        }
+
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
 
-        // Gameplay scriptlerini kapat (karakter/kamera dönmesin)
         if (disableOnStart != null)
-        {
             foreach (var b in disableOnStart)
                 if (b) b.enabled = false;
-        }
 
-        // Play button click baðla
         if (playButton)
         {
             playButton.onClick.RemoveAllListeners();
@@ -41,31 +49,28 @@ public class MenuController : MonoBehaviour
 
     public void OnPlayPressed()
     {
-        // Buton spam olmasýn
         if (playButton) playButton.interactable = false;
 
-        // Menü gizle
-        if (menuRoot) menuRoot.SetActive(false);
-
-        // Kamera animasyonu baþlat
-        if (cameraAnimator) cameraAnimator.SetTrigger("PlayIntro");
-
-        StartCoroutine(EnableGameplayAfterIntro());
-    }
-
-    IEnumerator EnableGameplayAfterIntro()
-    {
-        yield return new WaitForSeconds(introDuration);
-
-        // Ýstersen burada gameplay’i aç
-        if (disableOnStart != null)
+        if (_menuCG != null)
         {
-            foreach (var b in disableOnStart)
-                if (b) b.enabled = true;
+            _menuCG.DOFade(0f, menuFadeOutDuration)
+                .SetEase(Ease.InQuad)
+                .OnComplete(() => menuRoot.SetActive(false));
+        }
+        else if (menuRoot)
+        {
+            menuRoot.SetActive(false);
         }
 
-        // Ýstersen mouse’u kilitle (FPS ise)
-        // Cursor.visible = false;
-        // Cursor.lockState = CursorLockMode.Locked;
+        if (cameraAnimator) cameraAnimator.SetTrigger("PlayIntro");
+
+        DOVirtual.DelayedCall(introDuration, EnableGameplay);
+    }
+
+    void EnableGameplay()
+    {
+        if (disableOnStart != null)
+            foreach (var b in disableOnStart)
+                if (b) b.enabled = true;
     }
 }

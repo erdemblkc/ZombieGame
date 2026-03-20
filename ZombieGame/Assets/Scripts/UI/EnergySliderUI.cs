@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class EnergySliderUI : MonoBehaviour
 {
@@ -8,9 +9,10 @@ public class EnergySliderUI : MonoBehaviour
     public Slider energySlider;
 
     [Header("Smooth")]
-    public float smoothSpeed = 12f;
+    public float tweenDuration = 0.08f;
 
     float _target01 = 1f;
+    float _lastTarget = -1f;
 
     void Awake()
     {
@@ -27,6 +29,7 @@ public class EnergySliderUI : MonoBehaviour
             player = FindFirstObjectByType<PlayerController2>();
 
         UpdateTarget();
+        _lastTarget = _target01;
 
         if (energySlider != null)
             energySlider.value = _target01;
@@ -38,8 +41,12 @@ public class EnergySliderUI : MonoBehaviour
 
         UpdateTarget();
 
-        energySlider.value =
-            Mathf.Lerp(energySlider.value, _target01, smoothSpeed * Time.deltaTime);
+        if (Mathf.Abs(_target01 - _lastTarget) > 0.001f)
+        {
+            _lastTarget = _target01;
+            energySlider.DOKill();
+            energySlider.DOValue(_target01, tweenDuration).SetEase(Ease.OutQuad);
+        }
     }
 
     void UpdateTarget()

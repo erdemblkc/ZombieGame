@@ -1,7 +1,7 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using DG.Tweening;
 
 public class WeaponUnlockToast : MonoBehaviour
 {
@@ -15,24 +15,23 @@ public class WeaponUnlockToast : MonoBehaviour
     public float fadeOutTime = 0.35f;
 
     [Header("Motion")]
-    public float risePixels = 40f;      // kaybolurken yukarý çýkma
-    public float startScale = 1.05f;    // küçük pop hissi
-
-    Coroutine co;
+    public float risePixels = 40f;
+    public float startScale = 1.05f;
 
     void Awake()
     {
         if (cg == null) cg = GetComponent<CanvasGroup>();
         if (root == null) root = GetComponent<RectTransform>();
 
-        // baþlangýç gizli
         cg.alpha = 0f;
         gameObject.SetActive(false);
     }
 
     public void Show(Sprite weaponSprite, string title = "NEW WEAPON")
     {
-        if (co != null) StopCoroutine(co);
+        DOTween.Kill(root);
+        DOTween.Kill(cg);
+
         gameObject.SetActive(true);
 
         if (titleTMP != null) titleTMP.text = title;
@@ -42,50 +41,21 @@ public class WeaponUnlockToast : MonoBehaviour
             gunImage.enabled = (weaponSprite != null);
         }
 
-        co = StartCoroutine(Run());
-    }
-
-    IEnumerator Run()
-    {
-        // anýnda göster (pause yok)
-        cg.alpha = 1f;
-
         Vector2 startPos = root.anchoredPosition;
-        Vector2 endPos = startPos + new Vector2(0f, risePixels);
 
+        cg.alpha = 1f;
         root.localScale = Vector3.one * startScale;
 
-        // çok kýsa pop (0.08 sn)
-        float popT = 0f;
-        const float popDur = 0.08f;
-        while (popT < popDur)
-        {
-            popT += Time.unscaledDeltaTime;
-            float k = Mathf.Clamp01(popT / popDur);
-            root.localScale = Vector3.Lerp(Vector3.one * startScale, Vector3.one, k);
-            yield return null;
-        }
-        root.localScale = Vector3.one;
-
-        // ekranda kalma
-        yield return new WaitForSecondsRealtime(showTime);
-
-        // fade-out + yukarý kay
-        float t = 0f;
-        while (t < fadeOutTime)
-        {
-            t += Time.unscaledDeltaTime;
-            float k = Mathf.Clamp01(t / fadeOutTime);
-
-            cg.alpha = 1f - k;
-            root.anchoredPosition = Vector2.Lerp(startPos, endPos, k);
-
-            yield return null;
-        }
-
-        cg.alpha = 0f;
-        root.anchoredPosition = startPos;
-        gameObject.SetActive(false);
-        co = null;
+        DOTween.Sequence()
+            .SetUpdate(true)
+            .Append(root.DOScale(Vector3.one, 0.08f).SetEase(Ease.OutQuad))
+            .AppendInterval(showTime)
+            .Append(cg.DOFade(0f, fadeOutTime).SetEase(Ease.InQuad))
+            .Join(root.DOAnchorPosY(startPos.y + risePixels, fadeOutTime).SetEase(Ease.InQuad))
+            .OnComplete(() =>
+            {
+                root.anchoredPosition = startPos;
+                gameObject.SetActive(false);
+            });
     }
 }
