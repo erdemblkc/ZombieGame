@@ -4,7 +4,12 @@
       "Bash(ls Assets/*.cs)",
       "Bash(cd:*)",
       "Bash(find Assets/Erdem/Models/Yenikarakterson/Scriptes -name *.cs)",
-      "Bash(find Assets/Alpin/Scripts -name *.cs)"
+      "Bash(find Assets/Alpin/Scripts -name *.cs)",
+      "Bash(find C:/Users/Erdem/OneDrive/Documents/GitHub/ZombieGame/ZombieGame/Assets -name *.cs)",
+      "Bash(mkdir -p \"C:/Users/Erdem/OneDrive/Documents/GitHub/ZombieGame/ZombieGame/Assets/Erdem/2nd/Scenes\")",
+      "Bash(mkdir -p \"C:/Users/Erdem/OneDrive/Documents/GitHub/ZombieGame/ZombieGame/Assets/Erdem/2nd/Scripts\")",
+      "Bash(find C:/Users/Erdem/OneDrive/Documents/GitHub/ZombieGame/ZombieGame/Assets -name *.asmdef)",
+      "Bash(find C:/Users/Erdem/OneDrive/Documents/GitHub/ZombieGame/ZombieGame/Assets -name *Renderer*.asset -o -name *URP*.asset -o -name *Universal*.asset)"
     ]
   }
 }
