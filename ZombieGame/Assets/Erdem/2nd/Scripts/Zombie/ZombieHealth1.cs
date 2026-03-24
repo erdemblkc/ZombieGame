@@ -78,6 +78,9 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
     {
         isDead = true;
 
+        // Notify upgrade system (MomentumSurge, etc.)
+        GameEvents.FireEnemyKilled(gameObject);
+
         // --- ÇİFT SES SİSTEMİ ---
 
         // 1. Zombi Sesi (Böğürme)

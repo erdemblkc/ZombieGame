@@ -136,14 +136,68 @@ Ana Menü (MainMenuScene)
 
 ---
 
+## MOVEMENT Upgrade Sistemi
+
+Scriptler: `Assets/Erdem/2nd/Scripts/Upgrades/`
+
+### Core
+| Script | Görev |
+|--------|-------|
+| `IUpgrade` | Interface — tüm upgradeler implement eder |
+| `IEvolution` | Interface — evolution behaviour'ları |
+| `UpgradeData` | ScriptableObject — upgrade açıklama + `BehaviourTypeName` |
+| `MovementUpgradeBase` | Abstract base class — tüm movement upgradeler extend eder |
+| `UpgradeSlotManager` | 4 slot yönetimi, AddUpgrade/RemoveUpgrade |
+| `EvolutionRegistry` | Kombinasyon eşleştirme ve evolution spawn |
+| `PlayerMovementModifiers` | Upgrade → PlayerController2 köprüsü (flag'ler) |
+| `GameEvents` | Static event hub — `OnEnemyKilled` (ZombieHealth1.Die() fire eder) |
+
+### Movement Upgradeler
+`JetpackUpgrade`, `DoubleDashUpgrade`, `SlideUpgrade`, `WallRunUpgrade`, `GroundSlamUpgrade`, `GrappleUpgrade`, `PhaseStepUpgrade`, `MomentumSurgeUpgrade`
+
+### Evolutions (aktif)
+| Evolution | Gerekli Upgradeler |
+|-----------|---------------------|
+| `ShoulderBashEvolution` | Jetpack + DoubleDash |
+| `PredatorDropEvolution` | Grapple + GroundSlam |
+| `CannonballEvolution` | Slide + Armor* |
+| `GhostDoubleEvolution` | PhaseStep + Decoy* |
+
+*Armor ve Decoy henüz implement edilmedi — evolution aktif olmaz ama kod hazır.
+
+### Input Mapping (yeni)
+| Tuş | Upgrade |
+|-----|---------|
+| E | DoubleDash (built-in dash'in yerini alır) |
+| C (yerde, sprint) | Slide |
+| C (havada) | GroundSlam |
+| Q | Grapple |
+| F | PhaseStep |
+| Space (havada, basılı) | Jetpack |
+
+### Kurulum
+1. Player GameObject'e `PlayerMovementModifiers`, `UpgradeSlotManager`, `EvolutionRegistry` component ekle
+2. Her upgrade için `Assets/Create → Upgrades/UpgradeData` ile .asset oluştur, `BehaviourTypeName` = class adı (ör. `JetpackUpgrade`)
+3. `EvolutionRegistry.Entries` dizisini Inspector'dan doldur (UpgradeA, UpgradeB, EvolutionTypeName)
+4. Test için `UpgradeTestUI` herhangi bir GameObject'e ekle, UpgradeData asset'leri ata
+
+### PlayerController2 Değişiklikleri
+- `PlayerMovementModifiers _upgradeMods` — Awake'de cache edilir
+- `public void ResetVerticalVelocity()` — upgradeler gravity override öncesi çağırır
+- Gravity/jump/dash/speed artık `_upgradeMods` flag'lerini kontrol eder
+
+---
+
 ## Bilinen Eksikler / TODO
 - Wave 2 sonrası akış implemente edilmemiş
 - Enfeksiyon ölümü şu an sadece `Debug.Log` — GameOver tetiklemiyor
 - `InfectionSystem.DieFromInfection()` içinde `GameOverManager` çağrısı yok
+- Armor + Decoy (UTILITY) upgrade'leri implemente edilince Cannonball + GhostDouble evolution'ları aktif olur
+- UpgradeData .asset dosyaları henüz oluşturulmadı (Unity Editor'de elle oluşturulmalı)
 
 ---
 
 ## Son Güncelleme
 **Tarih:** 2026-03-24
-**Güncelleyen:** Erdem
-**Değişiklik:** İlk CLAUDE.md oluşturuldu
+**Güncelleyen:** Erdem (Claude Code)
+**Değişiklik:** MOVEMENT Upgrade Sistemi eklendi (8 upgrade, 4 evolution, slot manager, evolution registry)

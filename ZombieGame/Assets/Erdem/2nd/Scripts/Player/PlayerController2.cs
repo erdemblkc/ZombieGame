@@ -83,6 +83,9 @@ public class PlayerController2 : MonoBehaviour
     private Vector3 verticalVel;
     private Quaternion upperBodyDefaultLocalRot;
 
+    // ── Upgrade system hooks ──────────────────────────────────────────────
+    private PlayerMovementModifiers _upgradeMods;
+
     // Aim "snap" fix
     private bool wasAiming;
     private float aimPitchStart;
@@ -122,10 +125,14 @@ public class PlayerController2 : MonoBehaviour
             upperBodyDefaultLocalRot = upperBodyBone.localRotation;
 
         currentEnergy = maxEnergy;
+        _upgradeMods  = GetComponent<PlayerMovementModifiers>();
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
+
+    /// <summary>Resets the vertical velocity accumulator. Called by upgrades before taking over vertical movement.</summary>
+    public void ResetVerticalVelocity() { verticalVel.y = 0f; }
 
     void Update()
     {
@@ -165,6 +172,13 @@ public class PlayerController2 : MonoBehaviour
 
     void HandleDash()
     {
+        // DoubleDash upgrade suppresses the built-in single dash when active
+        if (_upgradeMods != null && _upgradeMods.SuppressDash)
+        {
+            isDashing = false;
+            return;
+        }
+
         if (isDashing)
         {
             dashTimer -= Time.deltaTime;
@@ -189,16 +203,21 @@ public class PlayerController2 : MonoBehaviour
         input = Vector3.ClampMagnitude(input, 1f);
         Vector3 moveDir = (transform.right * input.x + transform.forward * input.z);
 
-        // Gravity + Jump
-        if (cc.isGrounded)
+        // Gravity + Jump — skipped if an upgrade owns vertical movement
+        bool _suppressGravity = _upgradeMods != null && _upgradeMods.SuppressGravity;
+        bool _suppressJump    = _upgradeMods != null && _upgradeMods.SuppressJump;
+        if (!_suppressGravity)
         {
-            if (verticalVel.y < 0f) verticalVel.y = groundedStickForce;
-            if (Input.GetKeyDown(KeyCode.Space))
-                verticalVel.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-        }
-        else
-        {
-            verticalVel.y += gravity * Time.deltaTime;
+            if (cc.isGrounded)
+            {
+                if (verticalVel.y < 0f) verticalVel.y = groundedStickForce;
+                if (!_suppressJump && Input.GetKeyDown(KeyCode.Space))
+                    verticalVel.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            }
+            else
+            {
+                verticalVel.y += gravity * Time.deltaTime;
+            }
         }
 
         // DASH
@@ -235,10 +254,18 @@ public class PlayerController2 : MonoBehaviour
         }
 
         IsSprinting = isSprinting;
-        float speed = isSprinting ? sprintSpeed : moveSpeed;
+        float speedMult = _upgradeMods != null ? _upgradeMods.SpeedMultiplier : 1f;
+        float speed = (isSprinting ? sprintSpeed : moveSpeed) * speedMult;
         Vector3 move = moveDir * speed;
-        Vector3 finalMove = move + verticalVel + ConsumeImpulse();
-        cc.Move(finalMove * Time.deltaTime);
+
+        // When an upgrade owns horizontal movement it calls cc.Move itself;
+        // PlayerController2 only contributes vertical velocity.
+        bool _suppressHoriz  = _upgradeMods != null && _upgradeMods.SuppressHorizontalMove;
+        Vector3 vertForMove  = (_upgradeMods != null && _upgradeMods.SuppressGravity) ? Vector3.zero : verticalVel;
+        if (_suppressHoriz)
+            cc.Move((vertForMove + ConsumeImpulse()) * Time.deltaTime);
+        else
+            cc.Move((move + vertForMove + ConsumeImpulse()) * Time.deltaTime);
 
         if (anim) anim.SetFloat(speedParam, input.magnitude);
 
