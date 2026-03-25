@@ -1,8 +1,13 @@
-﻿using UnityEngine;
+using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using System.Collections;
 
+/// <summary>
+/// Handles weapon firing, magazine reload, weapon switching, and UI updates.
+/// Ammo reserve is unlimited — only the magazine (clip) size limits burst firing.
+/// Integrates with GunModifierStack for damage/fire-rate/spread-shot upgrades.
+/// </summary>
 public class GunShooter : MonoBehaviour
 {
     [Header("Refs")]
@@ -11,7 +16,7 @@ public class GunShooter : MonoBehaviour
     public TextMeshProUGUI ammoText;
 
     [Header("Audio Source")]
-    public AudioSource audioSource; // Player üzerindeki AudioSource
+    public AudioSource audioSource;
 
     [Header("Guns (Hierarchy Children)")]
     public GameObject gunOld;
@@ -24,36 +29,22 @@ public class GunShooter : MonoBehaviour
 
     [Header("Animator Params")]
     public string aimingParam = "IsAiming";
-    public string shootParam = "Shoot";
+    public string shootParam  = "Shoot";
 
     // ---- runtime ----
-    int currentAmmo;
-    int reserveAmmo;
+    int   currentAmmo;
     float nextFireTime;
-    bool isReloading;
+    bool  isReloading;
 
-    // --- SİLAH AÇMA FONKSİYONU (Hafızalı) ---
-    public void SetNewGunEnabled(bool enabled)
-    {
-        // Hafızaya kaydet
-        if (enabled) GlobalGameState.IsWeaponUpgraded = true;
+    // ---- upgrade modifier stack ----
+    GunModifierStack _modStack;
 
-        if (enabled) UpgradeToNewGun();
-        else SwitchToOldGun();
-    }
-
-    public void AddReserveAmmo(int amount) { amount = Mathf.Max(0, amount); reserveAmmo += amount; UpdateAmmoUI(); }
-
-    public void ApplyDamageMultiplier(float mul)
-    {
-        mul = Mathf.Max(0.1f, mul);
-        if (currentWeapon != null) currentWeapon.damage *= mul;
-        if (gunOld != null) { var ws = gunOld.GetComponent<WeaponStats>(); if (ws != null) ws.damage *= mul; }
-        if (gunNew != null) { var ws = gunNew.GetComponent<WeaponStats>(); if (ws != null) ws.damage *= mul; }
-    }
+    // ── Lifecycle ──────────────────────────────────────────────────────────
 
     void Awake()
     {
+        _modStack = GetComponent<GunModifierStack>();
+
         if (anim == null) { anim = GetComponentInChildren<Animator>(); if (anim == null) anim = GetComponent<Animator>(); }
         if (cameraPivot == null && Camera.main != null) cameraPivot = Camera.main.transform;
 
@@ -70,21 +61,12 @@ public class GunShooter : MonoBehaviour
         UpdateAmmoUI();
         if (anim != null) anim.SetBool(aimingParam, false);
 
-        // --- HAFIZA KONTROLÜ 1 (Awake) ---
-        if (GlobalGameState.IsWeaponUpgraded)
-        {
-            UpgradeToNewGun();
-        }
+        if (GlobalGameState.IsWeaponUpgraded) UpgradeToNewGun();
     }
 
-    // --- YENİ EKLENEN KISIM (Start) ---
-    // Bu kısım, Awake'ten sonra devreye girer ve animasyonların silahı bozmasını engeller.
     void Start()
     {
-        if (GlobalGameState.IsWeaponUpgraded)
-        {
-            UpgradeToNewGun();
-        }
+        if (GlobalGameState.IsWeaponUpgraded) UpgradeToNewGun();
     }
 
     void Update()
@@ -100,8 +82,8 @@ public class GunShooter : MonoBehaviour
 
         if (Input.GetMouseButton(0) && Time.time >= nextFireTime)
         {
-            if (currentAmmo <= 0) return;
-            nextFireTime = Time.time + currentWeapon.fireCooldown;
+            float cooldownMul = _modStack != null ? _modStack.FireCooldownMultiplier : 1f;
+            nextFireTime = Time.time + currentWeapon.fireCooldown * cooldownMul;
             currentAmmo--;
             UpdateAmmoUI();
 
@@ -110,13 +92,14 @@ public class GunShooter : MonoBehaviour
         }
     }
 
+    // ── Reload ─────────────────────────────────────────────────────────────
+
     void TryReload()
     {
         if (isReloading) return;
         if (currentWeapon == null) return;
         if (currentAmmo >= currentWeapon.magazineSize) return;
-        if (reserveAmmo <= 0) return;
-
+        // No reserve check — ammo is unlimited
         StartCoroutine(ReloadRoutine());
     }
 
@@ -128,7 +111,6 @@ public class GunShooter : MonoBehaviour
 
         if (showReloadCircle) SetReloadCircleVisible(true);
 
-        // --- SES: RELOAD ---
         if (audioSource != null && currentWeapon.reloadSound != null)
         {
             audioSource.pitch = 1.0f;
@@ -144,21 +126,20 @@ public class GunShooter : MonoBehaviour
             yield return null;
         }
 
-        int need = currentWeapon.magazineSize - currentAmmo;
-        int take = Mathf.Min(need, reserveAmmo);
-        currentAmmo += take;
-        reserveAmmo -= take;
+        // Unlimited reserve: always fill the magazine completely
+        currentAmmo = currentWeapon.magazineSize;
 
         UpdateAmmoUI();
         SetReloadCircleVisible(false);
         isReloading = false;
     }
 
+    // ── Shooting ───────────────────────────────────────────────────────────
+
     void ShootProjectile()
     {
         if (isReloading || cameraPivot == null || currentWeapon == null) return;
 
-        // --- SES: ATEŞ ---
         if (audioSource != null && currentWeapon.fireSound != null)
         {
             audioSource.pitch = Random.Range(0.9f, 1.1f);
@@ -168,28 +149,89 @@ public class GunShooter : MonoBehaviour
         Transform firePoint = currentWeapon.muzzle;
         if (firePoint == null) return;
 
-        Vector3 dir = cameraPivot.forward;
+        Vector3 dir     = cameraPivot.forward;
         Vector3 spawnPos = firePoint.position;
-        Quaternion spawnRot = Quaternion.LookRotation(dir, Vector3.up);
+
+        float infectionDmgMul = InfectionSystem.Instance != null ? InfectionSystem.Instance.DamageBonusMultiplier : 1f;
+        float effectiveDamage = currentWeapon.damage * (_modStack != null ? _modStack.DamageMultiplier : 1f) * infectionDmgMul;
+        int   piercing        = _modStack != null ? _modStack.PiercingCount  : 0;
+        int   ricochet        = _modStack != null ? _modStack.RicochetCount  : 0;
+
+        SpawnBullet(spawnPos, dir, effectiveDamage, piercing, ricochet);
+
+        // Spread Shot: fire 2 extra bullets in a cone
+        if (_modStack != null && _modStack.HasSpreadShot)
+        {
+            SpawnBullet(spawnPos, SpreadDir(dir, cameraPivot,  15f, 0f),  effectiveDamage * 0.7f, piercing, ricochet);
+            SpawnBullet(spawnPos, SpreadDir(dir, cameraPivot, -15f, 0f),  effectiveDamage * 0.7f, piercing, ricochet);
+        }
+    }
+
+    /// <summary>Spawns a single bullet (or double-bullet) in the given direction.</summary>
+    void SpawnBullet(Vector3 pos, Vector3 dir, float damage, int piercing, int ricochet = 0)
+    {
+        Quaternion rot = Quaternion.LookRotation(dir, Vector3.up);
 
         if (currentWeapon.useDoubleBullet && currentWeapon.doubleBulletPrefab != null)
         {
-            DoubleBullet db = Instantiate(currentWeapon.doubleBulletPrefab, spawnPos, spawnRot);
-            db.leftBarrel = currentWeapon.leftBarrel;
-            db.rightBarrel = currentWeapon.rightBarrel;
-            db.damage = currentWeapon.damage;
+            DoubleBullet db = Instantiate(currentWeapon.doubleBulletPrefab, pos, rot);
+            db.leftBarrel   = currentWeapon.leftBarrel;
+            db.rightBarrel  = currentWeapon.rightBarrel;
+            db.damage       = damage;
+            db.piercingCount = piercing;
+            db.ricochetCount = ricochet;
             db.Fire(dir);
         }
         else if (currentWeapon.singleBulletPrefab != null)
         {
-            Bullet b = Instantiate(currentWeapon.singleBulletPrefab, spawnPos, spawnRot);
-            b.damage = currentWeapon.damage;
+            Bullet b = Instantiate(currentWeapon.singleBulletPrefab, pos, rot);
+            b.damage        = damage;
+            b.piercingCount = piercing;
+            b.ricochetCount = ricochet;
             b.Fire(dir);
         }
     }
 
-    void UpdateAmmoUI() { if (ammoText != null) ammoText.text = $"{currentAmmo} / {reserveAmmo}"; }
-    void SetReloadCircleVisible(bool v) { if (reloadCircle != null) { reloadCircle.gameObject.SetActive(v); if (v) reloadCircle.fillAmount = 0f; } }
+    /// <summary>Returns a direction rotated by yaw/pitch relative to the camera.</summary>
+    static Vector3 SpreadDir(Vector3 baseDir, Transform cam, float yawDeg, float pitchDeg)
+    {
+        Quaternion rot = Quaternion.AngleAxis(yawDeg, cam.up) * Quaternion.AngleAxis(pitchDeg, cam.right);
+        return rot * baseDir;
+    }
+
+    // ── UI ─────────────────────────────────────────────────────────────────
+
+    void UpdateAmmoUI()
+    {
+        if (ammoText != null && currentWeapon != null)
+            ammoText.text = $"{currentAmmo} / {currentWeapon.magazineSize}  \u221E";
+    }
+
+    void SetReloadCircleVisible(bool v)
+    {
+        if (reloadCircle != null) { reloadCircle.gameObject.SetActive(v); if (v) reloadCircle.fillAmount = 0f; }
+    }
+
+    // ── Public API ─────────────────────────────────────────────────────────
+
+    /// <summary>Switches to the upgraded gun and saves state.</summary>
+    public void SetNewGunEnabled(bool enabled)
+    {
+        if (enabled) GlobalGameState.IsWeaponUpgraded = true;
+        if (enabled) UpgradeToNewGun();
+        else         SwitchToOldGun();
+    }
+
+    /// <summary>No-op: ammo is now unlimited. Kept for API compatibility.</summary>
+    public void AddReserveAmmo(int amount) { /* unlimited — no action needed */ }
+
+    public void ApplyDamageMultiplier(float mul)
+    {
+        mul = Mathf.Max(0.1f, mul);
+        if (currentWeapon != null) currentWeapon.damage *= mul;
+        if (gunOld != null) { var ws = gunOld.GetComponent<WeaponStats>(); if (ws != null) ws.damage *= mul; }
+        if (gunNew != null) { var ws = gunNew.GetComponent<WeaponStats>(); if (ws != null) ws.damage *= mul; }
+    }
 
     public void UpgradeToNewGun()
     {
@@ -212,10 +254,9 @@ public class GunShooter : MonoBehaviour
         if (newStats == null) return;
 
         currentWeapon = newStats;
-        currentAmmo = currentWeapon.magazineSize;
-        reserveAmmo = currentWeapon.reserveStart;
-        isReloading = false;
-        nextFireTime = 0f;
+        currentAmmo   = currentWeapon.magazineSize;
+        isReloading   = false;
+        nextFireTime  = 0f;
 
         UpdateAmmoUI();
         SetReloadCircleVisible(false);

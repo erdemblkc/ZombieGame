@@ -17,9 +17,16 @@ public class PlayerDamageReceiver : MonoBehaviour
     public float knockbackUp = 2.2f;
     public float knockbackDuration = 0.12f;
 
+    [Header("Armor")]
+    /// <summary>
+    /// Multiplier applied to all incoming damage. ArmorUpgrade sets this to 0.85f.
+    /// Stack multiplicatively if multiple armor sources exist.
+    /// </summary>
+    [HideInInspector] public float armorDamageMultiplier = 1f;
+
     [Header("Death Settings")]
-    public Transform cameraPivot; // Player'ýn kamerasýný taþýyan obje
-    public MonoBehaviour[] scriptsToDisable; // Ölünce kapanacak scriptler (Controller, Shooter vb.)
+    public Transform cameraPivot; // Player'ï¿½n kamerasï¿½nï¿½ taï¿½ï¿½yan obje
+    public MonoBehaviour[] scriptsToDisable; // ï¿½lï¿½nce kapanacak scriptler (Controller, Shooter vb.)
 
     private float _lastDamageTime = -999f;
     private InfectionSystem _infection;
@@ -64,7 +71,8 @@ public class PlayerDamageReceiver : MonoBehaviour
         if (Time.time - _lastDamageTime < damageCooldown) return;
 
         _lastDamageTime = Time.time;
-        currentHealth = Mathf.Clamp(currentHealth - damageAmount, 0f, maxHealth);
+        float effectiveDamage = damageAmount * armorDamageMultiplier;
+        currentHealth = Mathf.Clamp(currentHealth - effectiveDamage, 0f, maxHealth);
         _infection.OnPlayerDamaged();
 
         if (currentHealth <= 0f)
@@ -89,10 +97,10 @@ public class PlayerDamageReceiver : MonoBehaviour
             }
         }
 
-        // 2. Kamerayý çevir (Yere düþme hissi)
+        // 2. Kamerayï¿½ ï¿½evir (Yere dï¿½ï¿½me hissi)
         StartCoroutine(DeathCameraRoutine());
 
-        // 3. UI Göster
+        // 3. UI Gï¿½ster
         if (_gameOverManager != null)
         {
             _gameOverManager.ShowDeathScreen();
@@ -104,7 +112,7 @@ public class PlayerDamageReceiver : MonoBehaviour
         if (cameraPivot == null) yield break;
 
         Quaternion startRot = cameraPivot.localRotation;
-        Quaternion targetRot = Quaternion.Euler(-60f, 0f, 20f); // Tavana bakýþ
+        Quaternion targetRot = Quaternion.Euler(-60f, 0f, 20f); // Tavana bakï¿½ï¿½
 
         float t = 0f;
         while (t < 1.5f)
@@ -112,7 +120,7 @@ public class PlayerDamageReceiver : MonoBehaviour
             t += Time.deltaTime;
             cameraPivot.localRotation = Quaternion.Slerp(startRot, targetRot, t * 2f);
 
-            // Hafifçe yere çök
+            // Hafifï¿½e yere ï¿½ï¿½k
             transform.position -= Vector3.up * Time.deltaTime * 0.5f;
 
             yield return null;
@@ -135,5 +143,11 @@ public class PlayerDamageReceiver : MonoBehaviour
     public void FullHeal()
     {
         currentHealth = maxHealth;
+    }
+
+    /// <summary>Enfeksiyon gibi dÄ±ÅŸ sistemler tarafÄ±ndan Ã¶lÃ¼mÃ¼ tetiklemek iÃ§in kullanÄ±lÄ±r.</summary>
+    public void ForceKill()
+    {
+        Die();
     }
 }

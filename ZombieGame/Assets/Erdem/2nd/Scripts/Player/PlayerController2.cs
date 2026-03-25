@@ -255,6 +255,7 @@ public class PlayerController2 : MonoBehaviour
 
         IsSprinting = isSprinting;
         float speedMult = _upgradeMods != null ? _upgradeMods.SpeedMultiplier : 1f;
+        speedMult *= InfectionSystem.Instance != null ? InfectionSystem.Instance.SpeedBonusMultiplier : 1f;
         float speed = (isSprinting ? sprintSpeed : moveSpeed) * speedMult;
         Vector3 move = moveDir * speed;
 

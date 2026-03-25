@@ -3,6 +3,9 @@ using System;
 
 public class InfectionSystem : MonoBehaviour
 {
+    public static InfectionSystem Instance { get; private set; }
+
+    private PlayerDamageReceiver _damageReceiver;
     [Header("Infection (0..100)")]
     [Range(0f, 100f)] public float infection = 0f;
     public float maxInfection = 100f;
@@ -10,6 +13,27 @@ public class InfectionSystem : MonoBehaviour
     [Header("Gain Multiplier (Upgrades)")]
     [Tooltip("1 = normal. 0.7 = %30 daha yavaş artar.")]
     public float gainMultiplier = 1f;
+
+    // ── Risk/Reward Bonusları ─────────────────────────────────────────────
+    // 0-33%: Normal
+    // 34-66%: +15% hasar
+    // 67-99%: +30% hasar, +20% hız, 2x enfeksiyon kazanımı
+    // 100%: Ölüm
+
+    /// <summary>GunShooter tarafından okunur. 1.0 / 1.15 / 1.30</summary>
+    public float DamageBonusMultiplier
+    {
+        get
+        {
+            float t = infection / maxInfection;
+            if (t >= 0.67f) return 1.30f;
+            if (t >= 0.34f) return 1.15f;
+            return 1.00f;
+        }
+    }
+
+    /// <summary>PlayerController2 tarafından okunur. 1.0 / 1.20</summary>
+    public float SpeedBonusMultiplier => (infection / maxInfection >= 0.67f) ? 1.20f : 1.00f;
 
     [Header("Gain Over Time")]
     [Tooltip("0'dan 100'e kaç saniyede ulaşsın? Örn 180 = 3 dakika")]
@@ -23,6 +47,12 @@ public class InfectionSystem : MonoBehaviour
     public bool isDead = false;
 
     public Action<float> OnInfectionChanged; // normalized 0..1
+
+    void Awake()
+    {
+        Instance = this;
+        _damageReceiver = GetComponent<PlayerDamageReceiver>();
+    }
 
     void Start()
     {
@@ -53,6 +83,10 @@ public class InfectionSystem : MonoBehaviour
         if (isDead) return;
 
         amount *= Mathf.Max(0f, gainMultiplier);
+
+        // 67%+ enfeksiyonda kazanım hızı 2x artar
+        if (infection / maxInfection >= 0.67f)
+            amount *= 2f;
 
         float prev = infection;
         infection = Mathf.Clamp(infection + amount, 0f, maxInfection);
@@ -86,6 +120,7 @@ public class InfectionSystem : MonoBehaviour
     {
         isDead = true;
         Debug.Log("Player died from infection!");
+        _damageReceiver?.ForceKill();
     }
 
     void BroadcastUI()

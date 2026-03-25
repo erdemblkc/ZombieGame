@@ -11,16 +11,21 @@ public class DoubleBullet : MonoBehaviour
     public Transform rightBarrel;
 
     [Header("Fallback if no barrels")]
-    public float sideOffset = 0.06f; // sað-sol mesafe (barrel yoksa)
+    public float sideOffset = 0.06f; // saï¿½-sol mesafe (barrel yoksa)
 
     [Header("Stats")]
     public float damage = 25f;
+
+    /// <summary>Set by GunShooter when PiercerUpgrade is active.</summary>
+    [HideInInspector] public int piercingCount = 0;
+    /// <summary>Set by GunShooter when RicochetUpgrade is active.</summary>
+    [HideInInspector] public int ricochetCount = 0;
 
     public void Fire(Vector3 dir)
     {
         if (bulletPrefab == null) return;
 
-        // 1) Eðer iki barrel transformun varsa onlarý kullan
+        // 1) Eï¿½er iki barrel transformun varsa onlarï¿½ kullan
         if (leftBarrel != null && rightBarrel != null)
         {
             SpawnFrom(leftBarrel, dir);
@@ -28,7 +33,7 @@ public class DoubleBullet : MonoBehaviour
         }
         else
         {
-            // 2) Barrel yoksa: tek noktadan sað/sol offset ile spawn et
+            // 2) Barrel yoksa: tek noktadan saï¿½/sol offset ile spawn et
             Vector3 basePos = transform.position + transform.forward * spawnForwardOffset;
             Quaternion rot = Quaternion.LookRotation(dir, Vector3.up);
 
@@ -36,7 +41,7 @@ public class DoubleBullet : MonoBehaviour
             SpawnAt(basePos + transform.right * (sideOffset * 0.5f), rot, dir);
         }
 
-        // Bu parent objeye artýk gerek yok
+        // Bu parent objeye artï¿½k gerek yok
         Destroy(gameObject);
     }
 
@@ -50,7 +55,9 @@ public class DoubleBullet : MonoBehaviour
     void SpawnAt(Vector3 pos, Quaternion rot, Vector3 dir)
     {
         Bullet b = Instantiate(bulletPrefab, pos, rot);
-        b.damage = damage;
+        b.damage        = damage;
+        b.piercingCount = piercingCount;
+        b.ricochetCount = ricochetCount;
         b.Fire(dir);
     }
 }

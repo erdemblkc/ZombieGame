@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 166be032fb376cf4f9b5543fbee374a9, type: 3}
+  m_Name: PhaseStep_UpgradeData
+  m_EditorClassIdentifier: Assembly-CSharp::UpgradeData
+  _upgradeName: Phase Step
+  _icon: {fileID: 0}
+  _description: "F ile k\u0131sa mesafeye an\u0131nda \u0131\u015F\u0131nlan (2 \u015Farj)."
+  _category: 0
+  _behaviourTypeName: PhaseStepUpgrade
+  _prerequisites: []

@@ -53,8 +53,9 @@ public class GhostDoubleEvolution : MonoBehaviour, IEvolution
         var col = decoy.GetComponent<Collider>();
         if (col != null) Destroy(col);
 
-        // Distracts NavMesh agents: TODO(upgrade-system) — set agent destination to decoy
-        // when Decoy upgrade is implemented (will have proper AI logic).
+        // Redirect nearby zombies to the decoy position
+        var distractor = decoy.AddComponent<DecoyDistractor>();
+        distractor.distractRadius = 12f;
 
         Destroy(decoy, _decoyLifetime);
     }

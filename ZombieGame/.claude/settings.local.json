@@ -9,7 +9,17 @@
       "Bash(mkdir -p \"C:/Users/Erdem/OneDrive/Documents/GitHub/ZombieGame/ZombieGame/Assets/Erdem/2nd/Scenes\")",
       "Bash(mkdir -p \"C:/Users/Erdem/OneDrive/Documents/GitHub/ZombieGame/ZombieGame/Assets/Erdem/2nd/Scripts\")",
       "Bash(find C:/Users/Erdem/OneDrive/Documents/GitHub/ZombieGame/ZombieGame/Assets -name *.asmdef)",
-      "Bash(find C:/Users/Erdem/OneDrive/Documents/GitHub/ZombieGame/ZombieGame/Assets -name *Renderer*.asset -o -name *URP*.asset -o -name *Universal*.asset)"
+      "Bash(find C:/Users/Erdem/OneDrive/Documents/GitHub/ZombieGame/ZombieGame/Assets -name *Renderer*.asset -o -name *URP*.asset -o -name *Universal*.asset)",
+      "mcp__mcp-unity__recompile_scripts",
+      "mcp__mcp-unity__execute_menu_item",
+      "mcp__mcp-unity__get_console_logs",
+      "mcp__mcp-unity__send_console_log",
+      "mcp__mcp-unity__get_scene_info",
+      "mcp__mcp-unity__get_gameobject",
+      "mcp__mcp-unity__batch_execute",
+      "mcp__mcp-unity__update_component",
+      "Bash(node:*)",
+      "mcp__mcp-unity__save_scene"
     ]
   }
 }

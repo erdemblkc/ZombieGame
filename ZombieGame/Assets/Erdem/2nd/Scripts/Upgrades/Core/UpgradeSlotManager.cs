@@ -14,12 +14,42 @@ public class UpgradeSlotManager : MonoBehaviour
 
     private EvolutionRegistry _evolutionRegistry;
 
+    // ── Singleton ────────────────────────────────────────────────────────
+    public static UpgradeSlotManager Instance { get; private set; }
+
+    // ── Events ───────────────────────────────────────────────────────────
+    /// <summary>Fired whenever a slot is added to or removed from.</summary>
+    public event System.Action OnSlotsChanged;
+
     void Awake()
     {
+        Instance = this;
         _evolutionRegistry = GetComponent<EvolutionRegistry>();
     }
 
     // ── Public API ────────────────────────────────────────────────────────
+
+    /// <summary>Returns true when all 4 slots are occupied.</summary>
+    public bool AllSlotsFull()
+    {
+        for (int i = 0; i < SlotCount; i++)
+            if (_slots[i] == null) return false;
+        return true;
+    }
+
+    /// <summary>
+    /// Convenience overload: places the upgrade in the first available slot.
+    /// Returns false if all slots are full.
+    /// </summary>
+    public bool AddUpgrade(UpgradeData data)
+    {
+        for (int i = 0; i < SlotCount; i++)
+            if (_slots[i] == null)
+                return AddUpgrade(i, data);
+
+        Debug.LogWarning("[UpgradeSlotManager] All slots are full — cannot add upgrade.");
+        return false;
+    }
 
     /// <summary>
     /// Adds an upgrade to the given slot index (0–3).
@@ -68,6 +98,7 @@ public class UpgradeSlotManager : MonoBehaviour
         upgrade.OnUpgradeEnabled(gameObject);
 
         _evolutionRegistry?.Evaluate(_behaviours, gameObject);
+        OnSlotsChanged?.Invoke();
         return true;
     }
 
@@ -90,6 +121,7 @@ public class UpgradeSlotManager : MonoBehaviour
         _behaviours[slotIndex] = null;
 
         _evolutionRegistry?.Evaluate(_behaviours, gameObject);
+        OnSlotsChanged?.Invoke();
         return true;
     }
 

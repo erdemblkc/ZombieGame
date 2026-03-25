@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>Upgrade category used for filtering and display.</summary>
-public enum UpgradeCategory { Movement, Gun, Utility }
+public enum UpgradeCategory { Movement, Gun, Utility, Evolution }
 
 /// <summary>
 /// ScriptableObject that describes an upgrade: display info + the MonoBehaviour
@@ -24,12 +24,22 @@ public class UpgradeData : ScriptableObject
              "Example: JetpackUpgrade")]
     [SerializeField] private string _behaviourTypeName = "";
 
+    [Tooltip("For EVOLUTION upgrades: the player must already own all upgrades in this list.\n" +
+             "Leave empty for non-evolution upgrades.")]
+    [SerializeField] private UpgradeData[] _prerequisites = null;
+
     // ── Public accessors ──────────────────────────────────────────────────
 
     public string UpgradeName   => _upgradeName;
     public Sprite Icon          => _icon;
     public string Description   => _description;
     public UpgradeCategory Category => _category;
+
+    /// <summary>
+    /// For Evolution upgrades: all listed upgrades must be in the player's slots
+    /// before this evolution appears in the selection pool.
+    /// </summary>
+    public UpgradeData[] Prerequisites => _prerequisites;
 
     /// <summary>
     /// Returns the MonoBehaviour Type that implements this upgrade,
