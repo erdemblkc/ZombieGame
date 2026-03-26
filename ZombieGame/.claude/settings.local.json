@@ -19,7 +19,8 @@
       "mcp__mcp-unity__batch_execute",
       "mcp__mcp-unity__update_component",
       "Bash(node:*)",
-      "mcp__mcp-unity__save_scene"
+      "mcp__mcp-unity__save_scene",
+      "Skill(sprint-plan)"
     ]
   }
 }

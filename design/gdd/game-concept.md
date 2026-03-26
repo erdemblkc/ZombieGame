@@ -1,263 +1,301 @@
-# INFECTED — Game Concept Document
-**Version:** 0.1 | **Date:** 2026-03-26 | **Team:** Erdem + Alpin
+# Game Concept: Toy Terror
+
+*Created: 2026-03-25*
+*Last Updated: 2026-03-26*
+*Status: Draft*
 
 ---
 
 ## Elevator Pitch
-Hades'in oda-oda ilerleme ve boon sistemiyle zombie temalı 3D FPS'i birleştiren roguelike.
-Her run'da farklı build kur, her ölümde kampa dön, kalıcı güçlen, daha derin ilerle.
+
+> Bir çocuğun ateşli kabus dünyasında geçen, oda-bazlı FPS roguelike. Oyuncak
+> silahlarınla zombie oyuncakları temizle, her odadan güçlen ve çocuğun zihnini
+> ele geçiren karanlığı kat kat yok et.
+
+---
+
+## Core Identity
+
+| Aspect | Detail |
+| ---- | ---- |
+| **Genre** | FPS Roguelike |
+| **Platform** | PC (Steam) |
+| **Target Audience** | Roguelike ve aksiyon oyuncuları, 18-35 yaş |
+| **Player Count** | Single-player |
+| **Session Length** | 30-60 dakika (bir run) |
+| **Monetization** | Premium |
+| **Estimated Scope** | Medium (6-12 ay, 2 kişilik ekip) |
+| **Comparable Titles** | Hades, Returnal, DOOM Eternal |
 
 ---
 
 ## Core Fantasy
-> "Ben bu salgını durduracağım — ya da bu salgın beni durduracak."
 
-Oyuncu enfeksiyon kaynağına (Patient Zero'ya) ulaşmak için zombi dolu binaları kat kat geçer.
-Her ölüm bir öğrenme fırsatı; her run farklı bir build, farklı bir strateji.
+Sen bir çocuğun en sevdiği oyuncağısın — ama çocuk hasta ve kâbus görüyor.
+Zihnindeki korkular diğer oyuncakları zombie'ye dönüştürdü. Tek sağlam kalan
+sensin. Oyuncak silahlarınla oda oda ilerliyorsun; her düşmanı yıktığında
+çocuğun zihni biraz daha iyileşiyor, kâbus biraz daha zayıflıyor.
 
----
-
-## Döngüler
-
-### 30 Saniye (Moment-to-Moment)
-Oda içinde zombileri öldür → hareket upgrade'leriyle manevra yap → hayatta kal
-
-### 5 Dakika (Oda Döngüsü)
-Odayı temizle → upgrade seç (2-3 boon) → bir sonraki odayı seç → tekrar
-
-### 30-90 Dakika (Run Döngüsü)
-```
-HUB (Survivor Kampı)
-  → Run Başlat
-    → Bölüm 1 (Hastane): 3-4 oda + Boss
-    → Bölüm 2 (Metro): 4-5 oda + Boss
-    → Bölüm 3 (Laboratuvar): 5-6 oda + Patient Zero
-  → Ölünce → HUB'a dön
-  → Serum ile kalıcı upgrade al
-  → Tekrar dene
-```
-
-### Günler/Haftalar (Meta Döngüsü)
-Yeni boon'lar aç → Yeni kombinasyonlar keşfet → Daha yüksek Contagion seviyesi dene
+Güç fantezisi: Sevimli görünen ama ölümcül hissettiren silahlara hakimsin.
+Plastik, köpük, mermer — ama her biri gerçek hasarla vuruyorsun.
 
 ---
 
-## Hades Sistemi Karşılıkları
+## Unique Hook
 
-| Hades | INFECTED Karşılığı | Durum |
-|-------|-------------------|-------|
-| Boon seçimi | Upgrade kartları (UpgradeSelectionUI) | ✅ VAR |
-| Boon kombinasyonları | Evolution sistemi | ✅ VAR |
-| Slot sistemi | 4 UpgradeSlot | ✅ VAR |
-| Ölüm koşulu | HP=0 veya Enfeksiyon=100 | ✅ VAR |
-| Chamber combat | WaveManager odaları | ✅ VAR (refactor gerek) |
-| Darkness/Mirror | **Serum + Survivor Günlüğü** | ❌ YAPILACAK |
-| Olympian gods | **Upgrade Kaynakları** (4 kategori) | 🔧 GENİŞLETİLECEK |
-| Chamber selection | **Oda Seçim UI** | ❌ YAPILACAK |
-| Hub (House of Hades) | **Survivor Kampı** sahnesi | ❌ YAPILACAK |
-| Boss encounters | **Bölüm Bossu** | ❌ YAPILACAK |
-| Pact of Punishment | **Contagion Paktları** | ❌ YAPILACAK |
-| NPC ilişkileri | **Hayatta Kalan NPCler** | ❌ YAPILACAK |
-| Grasp/Rod of Murex | **Upgrade Rariteleri** | ❌ YAPILACAK |
+> "Hades gibi bir roguelike, AND ALSO tamamen FPS — ve her silah bir oyuncak."
+
+Oyuncak estetiği (parlak renkler, plastik sesler, Lego-benzeri karakterler)
+ile sert aksiyon hissi arasındaki kontrast oyunun kimliği. Silah çeşitliliği
+yerine **upgrade çeşitliliği** — her run farklı bir build, farklı bir his.
+FPS roguelike formatında bu estetik kombinasyonu yapan başka bir oyun yok.
 
 ---
 
-## Upgrade Kaynakları (= Hades'in Tanrıları)
+## Player Experience Analysis (MDA Framework)
 
-Her kaynak kendi rengi ve temasıyla:
+### Target Aesthetics (What the player FEELS)
 
-### 🔴 MİLİTER (Kırmızı)
-Silah güçlendirme. Hasar, ateş hızı, mermi.
-*Mevcut: RapidFire, HighCaliber, SpreadShot, Piercer, Ricochet*
+| Aesthetic | Priority | How We Deliver It |
+| ---- | ---- | ---- |
+| **Sensation** (duyusal zevk) | 1 | Silah hissi, geri tepme, vuruş sesi, plastik estetik |
+| **Challenge** (ustalık, engel aşma) | 2 | Roguelike zorluk eğrisi, boss mekanikleri |
+| **Fantasy** (güç, rol) | 3 | "En sevilen oyuncak olmak" kimliği |
+| **Narrative** (hikaye) | 4 | Çocuğun kâbus katmanları, boss'ların temsil ettiği korkular |
+| **Discovery** (keşif) | 5 | Yeni upgrade kombinasyonları, gizli oda varyantları |
+| **Expression** (ifade) | 6 | Build çeşitliliği, silah tercih özgürlüğü |
 
-### 🟢 LABORATUVAR (Yeşil)
-Enfeksiyonu silaha çevir. Zehirli mermi, yavaşlatma, enfeksiyon kalkanı.
-*Mevcut: ArmorUpgrade + yeniler eklenecek*
+### Core Mechanics
 
-### 🔵 HAYATTAKİ (Mavi)
-Hareket ve parkour. Hız, dash, grapple.
-*Mevcut: Jetpack, DoubleDash, Slide, WallRun, GroundSlam, Grapple, PhaseStep, MomentumSurge*
-
-### 🟣 MUTASYON (Mor/Altın)
-Evolutions — iki upgrade kombinasyonu.
-*Mevcut: ShoulderBash, PredatorDrop, Cannonball, GhostDouble*
-
----
-
-## Oda Tipleri
-
-| İkon | Tip | İçerik |
-|------|-----|--------|
-| ⚔️ | Combat | Zombileri öldür → Upgrade seç |
-| ⚠️ | Elite | Özel güçlü zombi → İkili upgrade seçimi |
-| 💀 | Boss | Bölüm sonu boss → Garanti nadir upgrade |
-| 🛒 | Shop | Run currency ile alım |
-| 💉 | Rest | HP doldur VEYA Enfeksiyon azalt (seç birini) |
-| ❓ | Event | Risk/ödül seçimi ("Bu kutuyu aç: ya iyi ya kötü") |
-| 🚪 | Seçim | 2-3 kapı, her biri farklı oda tipi gösterir |
+1. **FPS Muharebe** — Nişan al, ateş et, dodge et; her silahın farklı his ve ritmi var
+2. **Oda Temizleme + Upgrade Seçimi** — Her oda sonrası 3 upgrade seçeneğinden biri
+3. **Silah Değiştirme** — Aktif 2 silah slotu; run içinde bulduklarınla yenile
+4. **Meta-Progression** — Run dışında kalıcı unlock'lar (yeni silah tipleri, başlangıç bonusları)
+5. **Boss Aşamaları** — Her Act sonu boss'u, oyunun öğrendiklerini test eden özel mekanik
 
 ---
 
-## Meta-Progression: Survivor Günlüğü
+## Core Loop
 
-Run arası **Serum** harcanır (Hades'in Darkness'ı).
+### Moment-to-Moment (30 saniye)
 
-| Upgrade | Maliyet | Etki |
-|---------|---------|------|
-| Başlangıç HP +20 | 50 Serum | Her run'a daha sağlıklı başla |
-| 5. Upgrade Slotu | 200 Serum | Ekstra boon taşı |
-| Başlangıç Boon | 100 Serum | Run başında 1 upgrade seç |
-| Serum Çarpanı +10% | 75 Serum | Her run'dan daha fazla kazan |
-| Enfeksiyon Direnci | 80 Serum | Maksimum enfeksiyon +20 |
-| Silah Kilidi Aç | 150 Serum | Tüfek / shotgun başlangıç seçimi |
+Odaya gir → Zombie oyuncaklar spawn ol → Nişan al, ateş et, dodge et →
+Oda temizle → Upgrade veya yeni silah kazan → Bir sonraki kapıyı seç
 
----
+Kritik: Silah hissi burada her şey. Plastik ve köpük görünse de her silahın
+geri tepmesi, sesi ve ritmi tatmin edici olmalı.
 
-## Contagion Paktları (= Hades'in Heat Sistemi)
+### Short-Term (5-15 dakika)
 
-Her aktif pakt zorluk arttırır, ödülü de artar.
+3-5 oda temizle → Build şekillenmeye başlar → Act devam eder.
+"Bir oda daha" psikolojisi: her oda kapandığında bir sonraki kapı zaten görünüyor.
 
-| Pakt | Etki |
-|------|------|
-| Hızlı Sürü | Zombiler %25 hızlı |
-| Kalabalık Enfeksiyon | Her odada +2 zombi |
-| Dirençli Ölüler | Zombiler %30 daha fazla HP |
-| Yeniden Doğuş | Öldürülen zombiler bir kez canlanır |
-| Hızlı Yayılım | Enfeksiyon 2x hızlı artar |
-| Seçim Yok | Rest odaları ortadan kalkar |
+### Session-Level (30-60 dakika)
+
+Bir Act'ı başlat → Odaları temizle, upgrade topla → Act boss'unu yık ya da
+öl → Run biter veya Act 2'ye geç → Sona ulaşırsa çocuk uyandı, kabus bitti.
+
+### Long-Term Progression
+
+- **Run içi**: Upgrade stack'i, silah kombinasyonu, build sinerjisi
+- **Run dışı (meta)**: Yeni silah tipleri unlock, başlangıç bonusları, pasif yetenekler
+- **Hikaye**: Her boss yenilince çocuğun kâbus hafızasından bir kesit açılır
 
 ---
 
-## Bölümler ve Temalar
+## Enemy Design
 
-| Bölüm | Tema | Boss |
-|-------|------|------|
-| 1 | Hastane (beyaz, steril, dar koridorlar) | "Hemşire" — hızlı elite zombi |
-| 2 | Metro (karanlık, geniş, tren vagonu odaları) | "Sürücü" — tank zombi |
-| 3 | Laboratuvar (kimyasal tehlike, enfeksiyon gazı) | "Patient Zero" — fazlı final boss |
+### Zombie Tipleri
 
----
+| Tip | Görünüm | Davranış | Counter | Öncelik |
+| ---- | ---- | ---- | ---- | ---- |
+| **Koşucu** | Standart zombie oyuncak | Düz koşar, yakın saldırı | Normal ateş | MVP |
+| **Kalay Asker** | Teneke oyuncak asker, plastik kalkan | Yavaş, önden hasar almaz | Flanklama — arkaya geç | V2 |
+| **Kurmalı** | Kurmalı anahtarlı oyuncak | Duruyor → aniden 3x hız sprint | Dururken vur, sprint'te dodge | V2 |
+| **Palyaço** | Jack-in-the-box tipi | Yerden fırlar, yakın mesafe ani saldırı | Ses/işaret okuyunca geri çekil | V2 |
+| **Fırlatıcı** | Boya tabancalı oyuncak | Uzaktan renkli boya topu atar, yavaşlatır | Kapan, yaklaş ve bitir | V2 |
 
-## NPC'ler (Survivor Kampı)
+> Not: V2 tipleri öncelik sırasıyla eklenir. Zaman yetmezse Kalay Asker + Kurmalı ile devam edilir.
 
-| NPC | Rolü | Hades Karşılığı |
-|-----|------|-----------------|
-| **Dr. Yıldız** | Bilim insanı — Serum upgradeler satar | Nyx |
-| **Çavuş Kaya** | Asker — Silah upgradeleri | Achilles |
-| **Çocuk Ali** | Gizemli — Hint verir, hikayeyi iter | Hypnos |
-| **Radyo** | Dünya haberleri, lore | Chaos |
+### Tasarım Felsefesi
 
-Kampı NPC'lerle konuşmak küçük hikaye parçaları açar.
-Her başarılı run veya ölümden sonra yeni diyalog.
+Her zombie tipi farklı bir counter gerektiriyor — oyuncu durduğunda değil,
+agresif hareket ettiğinde hayatta kalıyor. DOOM felsefesi: **"Dur ve öl. Saldır ve yaşa."**
 
 ---
 
-## Upgrade Rariteleri (Hades'in Duo/Legendary gibi)
+## Boss Design
 
-| Rariyet | Renk | Açıklama |
-|---------|------|----------|
-| ⬜ Common | Beyaz | Temel upgrade |
-| 🟦 Uncommon | Mavi | Biraz daha güçlü versiyon |
-| 🟪 Rare | Mor | Özel etki ekler |
-| 🟨 Epic | Altın | Nadiren görünür, güçlü sinerji |
-| ❤️ Evolution | Kırmızı | İki upgrade kombinasyonu |
+### Boss 1 — "Teddy"
 
----
+> *Çocuğun en sevdiği oyuncak ayısı. Hastalık onu devleştirip bozdu.*
 
-## Oyun Pilastroları
+**Tematik anlam:** Güvenin yok olması — en sevilen şeyin tehdit haline gelmesi.
+Oyuncunun çocukla duygusal bağını en güçlü kuran an.
 
-### 1. AKIŞ
-> "Her oda öncekinden farklı hissettirmelidir."
-Test: Eğer iki oda aynı hissettiriyorsa, birini değiştir.
+**Faz Tasarımı:**
 
-### 2. BUILD KİMLİĞİ
-> "Oyuncu run'un ortasında 'ben bir hareket build'ı yapıyorum' diyebilmeli."
-Test: Upgrade seçimlerinde tutarlı bir yön var mı?
+| Faz | HP Eşiği | Davranış |
+| ---- | ---- | ---- |
+| **Faz 1** | %100-60 | Yavaş, ağır saldırılar. Pattern öğrenilebilir. |
+| **Faz 2** | %60-25 | Çılgın koşu, rastgele charge saldırısı, hız artar |
+| **Faz 3** | %25-0 | Yerde sürünerek (yaralı), çaresiz ama tehlikeli ani saldırılar |
 
-### 3. ANLAMLI ÖLÜM
-> "Her ölüm bir şey öğretmeli veya bir şey kazandırmalı."
-Test: Oyuncu ölünce sinirli değil, meraklı hissedecek mi?
-
-### 4. KAZANILMIŞ GÜÇ
-> "Meta-progression hile gibi değil, birikim gibi hissettirmeli."
-Test: Yeni oyuncu ilk run'da eğlenebiliyor mu?
-
-### 5. ZOMBİ ENFEKSİYONU
-> "Enfeksiyon sistemi risk/ödül gerilimi yaratmalı, sadece ceza değil."
-Test: Yüksek enfeksiyonun avantajı var mı?
+**Özel:** Faz 3'te müzik değişir — üzücü, kırık bir melodi girer.
+Öldürme anı sessiz geçer. Pillar 3 "The Child's Story" burada karşılanır.
 
 ---
 
-## Anti-Pilastro (Yapılmayacaklar)
+### Boss 2 — "The Fever"
 
-- ❌ Açık dünya / sandbox — odak dağılır
-- ❌ Multiplayer — iki geliştirici için kapsam dışı
-- ❌ Gerçekçi grafik — Unity URP stylize kalacak
-- ❌ Sonsuz upgrade listesi — az upgrade, derin sinerji daha iyi
+> *Hastalığın kendisi. Çocuğun zihnini tamamen ele geçirmeye çalışan karanlık.*
 
----
+**Tematik anlam:** Hastalığın son evresi. Oyunun final boss'u.
+Yenilince çocuk uyanır — oyun biter.
 
-## Geliştirme Yol Haritası
+**Görünüm:** Sabit formu yok — karanlık bir gölge silueti (basit mesh + particle efektler).
+Sürekli değişen yoğunluk ve boyut illüzyonu post-processing ile verilir.
 
-### Faz 1 — Roguelike İskeleti (Önce Bu)
-1. `RoomManager` — oda sistemi + kapı geçişi
-2. `RunManager` — run state, currency tracking
-3. `RoomSelectionUI` — kapı önizlemeli oda seçimi
-4. `HUB Scene` — Survivor Kampı sahnesi
+**Faz Tasarımı:**
 
-### Faz 2 — Meta Loop
-5. `MetaCurrency (Serum)` — GlobalGameState genişletme
-6. `PermanentUpgradeStation` — HUB'da kalıcı upgrade
-7. `UpgradeRarity` — Common/Rare/Epic renk sistemi
+| Faz | HP Eşiği | Davranış |
+| ---- | ---- | ---- |
+| **Faz 1** | %100-50 | Odanın köşelerinden görünür, projektil fırlatır, ekran hafif bozulur |
+| **Faz 2** | %50-25 | **3'e bölünür** — hangisi gerçek? İkisi sahte (az HP), biri asıl boss |
+| **Faz 3** | %25-0 | Yeniden birleşir, oda tamamen karardı, normal zombie spawn eder, müzik bozulur |
 
-### Faz 3 — İçerik
-8. `BossZombie` — fazlı boss dövüşü
-9. `EliteZombie` — güçlü mini-boss
-10. `RoomTypes` — Shop, Rest, Event odaları
-11. Yeni upgrade'ler (Laboratuvar kategorisi)
+**Teknik notlar:**
+- Faz 2 bölünme: 3 ayrı prefab, 2'si hızlı ölür, 1'i asıl boss
+- Ekran bozulması: URP post-processing + mevcut `RadialBlurFeature` üzerine inşa
+- Zombie spawn: Mevcut `WaveManager` mantığı boss'a bağlanır
+- Oda karartma: URP Global Volume intensity animasyonu
 
-### Faz 4 — Derinlik
-12. `ContagionPacts` — Heat sistemi
-13. NPC diyalog sistemi
-14. Bölüm 2 ve 3 içeriği
-15. Enfeksiyon → güç mekaniği
+**Ölüm:** Işık geri döner, renkler normalleşir. Sessizlik. Çocuk uyandı.
 
 ---
 
-## Tasarım Kararları (Onaylandı)
+## Game Pillars
 
-### Oda Sistemi: Sahne Bazlı
-Her oda ayrı Unity sahnesi. Geçiş `SceneManager.LoadScene` ile.
-```
-HubScene → RoomScene → RoomSelectionScene → RoomScene → ...
-```
+### Pillar 1: Toys With Teeth
+Her şey oyuncak görünür ama ölümcül hissettirmelidir. Estetik sevimli,
+his sert. Bu kontrast oyunun kimliği ve pazarlama kancası.
 
-### Enfeksiyon: Risk/Ödül Mekaniği
-| Seviye | Bonus | Ceza |
-|--------|-------|------|
-| 0–33% | Yok | Yok |
-| 34–66% | +15% hasar | — |
-| 67–99% | +30% hasar, +20% hız | Enfeksiyon 2x hızlı artar |
-| 100% | — | Ölüm |
+*Design test*: "Bu plastik görünüyor mu? Evet. Vururken tatmin edici ses çıkarıyor mu?
+Evet. O zaman doğru yoldayız."
 
-Enfeksiyon artık sadece tehdit değil, aktif güç kaynağı.
+### Pillar 2: One More Room
+Her oda kısa, her oda tatmin edici. Oyuncu duraksamamalı. Tempo ve ritim
+her diğer tasarım kararının önüne geçer.
+
+*Design test*: "Bu mekanik oyunun temposunu kesiyor mu? Uzun animasyon, yükleme,
+kesilme var mı? Varsa kısalt ya da kes."
+
+### Pillar 3: The Child's Story
+Mekanik ilerleme ile anlatı ilerleme aynı anda olur. Bir boss yenmek sadece
+bir engeli aşmak değil, çocuğun bir korkusunu yok etmektir.
+
+*Design test*: "Bu boss'un çocuğun hangi korkusunu temsil ettiğini bir cümlede
+anlatabilir miyim? Hayır ise tasarım eksik."
+
+### Anti-Pillars
+
+- **NOT açık dünya veya keşif**: Oda bazlı yapı tempoyu sağlar; serbest gezme Pillar 2'yi yıkar.
+- **NOT gerçekçi veya karanlık estetik**: Gritty, kan, gore yok. Oyuncak kontrastı estetiği zayıflatır.
+- **NOT çok sayıda eşzamanlı silah**: Aktif 2 slot. Fazlası odağı dağıtır.
+- **NOT çok oyunculu mod**: Kapsam dışında; single-player duygusal bağı güçlendirir.
 
 ---
 
-## Teknik Notlar
+## Inspiration and References
 
-**Mevcut koddan yeniden kullanılacaklar:**
-- `WaveManager` → `RoomCombatController` olarak refactor
-- `UpgradeSelectionUI` → rariyet renkleri eklenerek genişletilir
-- `EvolutionRegistry` → yeni evolution çiftleri eklenir
-- `GlobalGameState` → `runCurrency`, `metaCurrency`, `currentFloor` eklenir
-- `InfectionSystem` → Contagion Paktları ile entegre
+| Reference | What We Take From It | What We Do Differently |
+| ---- | ---- | ---- |
+| **Hades** | Oda bazlı roguelike, upgrade seçim anı, boss tekrarlanabilirliği | FPS perspektif, oyuncak estetiği |
+| **Returnal** | FPS + roguelike kombinasyonu, ölüm-yeniden başlama akışı | Çok daha erişilebilir kapsam ve estetik |
+| **DOOM Eternal** | Silah hissinin merkeze alınması, agresif oyun ödüllendirilir | Upgrade çeşitliliği silah çeşitliliği yerine |
+| **Toy Story / Small Soldiers** | Oyuncak dünyasının ciddiye alınması | Horror tonu, zombie estetik |
 
-**Engine:** Unity URP (mevcut)
-**Hedef Platform:** PC
+**Oyun dışı ilhamlar**: Toy Story 3'ün duygusal tonu, küçük çocukların ateşli hastalık
+kâbusları, plastik renk paletiyle noir kontrast.
+
+---
+
+## Technical Considerations
+
+| Consideration | Assessment |
+| ---- | ---- |
+| **Engine** | Unity (URP) — mevcut kod tabanı, ekip deneyimi |
+| **Art Style** | 3D Stylized — plastik materyal, parlak renkler, modüler karakter |
+| **Audio** | Yüksek öncelik — plastik kırılma, silah sesi çeşitliliği, dinamik müzik |
+| **Key Challenges** | Silah hissi; roguelike oda yönetimi; boss AI faz geçişleri |
+| **Networking** | Yok — single-player |
+
+---
+
+## Risks and Open Questions
+
+### Design Risks
+- Silah hissi yetersiz kalabilir — oyuncak silahları tatmin edici hissettirmezse döngü çöker
+- Upgrade çeşitliliği erken tükenir — 2-3 run sonrası tekrarlayan seçimler sıktırır
+- Boss pattern'leri ezber haline gelirse yeniden oynama değeri düşer
+
+### Technical Risks
+- FPS controller + roguelike oda sistemi entegrasyonu — beklenmedik bug riski
+- The Fever boss'unun "3'e bölünme" mekaniği dikkatli test gerektirir
+
+### Scope Risks
+- 2 kişilik ekip, Haziran deadline — MVP + 2 boss sıkı ama yapılabilir
+- V2 zombie tipleri hepsi yetişmeyebilir — öncelik sırasıyla eklenir, olmadı eldekiyle devam
+
+### Open Questions (Bekleyen Kararlar)
+- **Adrenalin sistemi** (beklemede): Kill = yozlaşma azalır, durmak = artar.
+  DOOM felsefesini tam karşılar. Kapsama sığarsa eklenir.
+- Oda başına kaç düşman dengeli? → Playtestle belirlenmeli
+- Meta-progression derinliği: Hades seviyesi mi, Dead Cells sadeliği mi?
+
+---
+
+## MVP Definition
+
+**Core hypothesis**: "FPS + oyuncak teması + oda bazlı roguelike birlikte eğlenceli mi?"
+
+**MVP için gerekli:**
+1. Çalışan FPS controller (hareket, nişan, ateş, dodge)
+2. 1 Act — 5-8 oda şablonu, prosedürel sıra
+3. 2 silah tipi
+4. 10 upgrade seçeneği
+5. 2 düşman tipi (Koşucu + 1 V2 tipi)
+6. Teddy boss savaşı
+7. Basit meta-progression
+
+**MVP dışı:**
+- Hikaye/cutscene
+- The Fever (Boss 2) — Act 2 ile birlikte gelir
+- 3'ten fazla silah tipi
+- Shop/Rest/Event özel odaları
+
+### Scope Tiers
+
+| Tier | İçerik | Hedef |
+| ---- | ---- | ---- |
+| **MVP** | 1 Act, 5-8 oda, 2 silah, Teddy | 4-6 hafta |
+| **Haziran Hedefi** | 2 Act, 5 zombie tipi, Teddy + The Fever, 3 silah, 15 upgrade | Haziran 2026 |
+| **Alpha** | 2 Act tam, tüm silahlar, ses draft | 6-8 ay |
+| **Full Vision** | 3 Act, tüm boss'lar, full ses/müzik | 10-12 ay |
+
+---
+
+## Next Steps
+
+- [ ] `/map-systems` — Sistemleri haritala
+- [ ] `/design-system fps-combat` — Silah hissi ve muharebe sistemi GDD
+- [ ] `/prototype fps-core` — Silah + oda MVP prototipi
+- [ ] `/sprint-plan new` — Haziran hedefli sprint planı
 
 ---
 
 ## Son Güncelleme
 **Tarih:** 2026-03-26
 **Güncelleyen:** Erdem + Alpin (Claude Code brainstorm)
+**Değişiklik:** INFECTED konseptinden Toy Terror'a pivot. Boss tasarımları (Teddy + The Fever)
+ve zombie tipleri eklendi.
