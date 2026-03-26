@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find C:/Users/canal/OneDrive/Documents/GitHub/ZombieGame/Assets -name *.unity)",
+      "Bash(find C:/Users/canal/OneDrive/Documents/GitHub/ZombieGame/Assets -name *.cs)",
+      "mcp__mcp-unity__create_scene",
+      "mcp__mcp-unity__get_scene_info",
+      "mcp__mcp-unity__update_gameobject",
+      "mcp__mcp-unity__set_transform",
+      "mcp__mcp-unity__save_scene",
+      "mcp__mcp-unity__add_asset_to_scene",
+      "mcp__mcp-unity__get_gameobject",
+      "mcp__mcp-unity__execute_menu_item",
+      "Bash(find C:UserscanalOneDriveDocumentsGitHubZombieGameZombieGameAssetsErdem2ndScriptsEditor -name *.cs)",
+      "Bash(xargs grep:*)",
+      "mcp__mcp-unity__recompile_scripts"
+    ]
+  }
+}

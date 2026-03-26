@@ -10,8 +10,8 @@ public class ZombieHitReact : MonoBehaviour
     public float knockbackTime = 0.08f;
 
     [Header("No Stun / No Freeze")]
-    public bool stopAIWhileKnockback = false; // false = AI hiç kapanmaz
-    public bool stopAgentWhileKnockback = false; // false = agent hiç durmaz
+    public bool stopAIWhileKnockback = false; // false = AI hiï¿½ kapanmaz
+    public bool stopAgentWhileKnockback = false; // false = agent hiï¿½ durmaz
 
     NavMeshAgent agent;
     MonoBehaviour followAI;
@@ -25,7 +25,7 @@ public class ZombieHitReact : MonoBehaviour
 
     public void React(Vector3 attackerPos)
     {
-        // Stack olmasýn: knockback çalýþýyorsa yeniden baþlatma
+        // Stack olmasï¿½n: knockback ï¿½alï¿½ï¿½ï¿½yorsa yeniden baï¿½latma
         if (running == null)
             running = StartCoroutine(ReactRoutine(attackerPos));
     }
@@ -34,7 +34,7 @@ public class ZombieHitReact : MonoBehaviour
     {
         bool hadAgent = (agent != null && agent.enabled);
 
-        // Ýstersen knockback süresince AI/agent çok kýsa kesilebilir (default kapalý)
+        // ï¿½stersen knockback sï¿½resince AI/agent ï¿½ok kï¿½sa kesilebilir (default kapalï¿½)
         if (stopAIWhileKnockback && followAI != null) followAI.enabled = false;
         bool prevStopped = false;
         if (hadAgent && stopAgentWhileKnockback)
@@ -59,12 +59,12 @@ public class ZombieHitReact : MonoBehaviour
                 float a = Mathf.Clamp01(t / knockbackTime);
 
                 float targetMoved = knockbackDistance * a;
-                float step = targetMoved - moved; // bu frame’de ne kadar ilerleyelim
+                float step = targetMoved - moved; // bu frameï¿½de ne kadar ilerleyelim
                 moved = targetMoved;
 
                 Vector3 delta = dir * step;
 
-                if (hadAgent)
+                if (hadAgent && agent.isActiveAndEnabled && agent.isOnNavMesh)
                     agent.Move(delta);
                 else
                     transform.position += delta;
@@ -73,7 +73,7 @@ public class ZombieHitReact : MonoBehaviour
             }
         }
 
-        // Geri aç
+        // Geri aï¿½
         if (hadAgent && stopAgentWhileKnockback) agent.isStopped = prevStopped;
         if (stopAIWhileKnockback && followAI != null) followAI.enabled = true;
 

@@ -20,6 +20,8 @@ public class UpgradeData : ScriptableObject
 
     [SerializeField] private UpgradeCategory _category = UpgradeCategory.Movement;
 
+    [SerializeField] private UpgradeRarity _rarity = UpgradeRarity.Common;
+
     [Tooltip("Full C# class name of the MonoBehaviour that implements this upgrade.\n" +
              "Example: JetpackUpgrade")]
     [SerializeField] private string _behaviourTypeName = "";
@@ -30,10 +32,11 @@ public class UpgradeData : ScriptableObject
 
     // ── Public accessors ──────────────────────────────────────────────────
 
-    public string UpgradeName   => _upgradeName;
-    public Sprite Icon          => _icon;
-    public string Description   => _description;
-    public UpgradeCategory Category => _category;
+    public string          UpgradeName => _upgradeName;
+    public Sprite          Icon        => _icon;
+    public string          Description => _description;
+    public UpgradeCategory Category    => _category;
+    public UpgradeRarity   Rarity      => _rarity;
 
     /// <summary>
     /// For Evolution upgrades: all listed upgrades must be in the player's slots

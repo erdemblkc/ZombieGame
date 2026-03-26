@@ -29,6 +29,31 @@ public static class GlobalGameState
         set { PlayerPrefs.SetInt("MetaCurrency", value); PlayerPrefs.Save(); }
     }
 
+    // ── Permanent Bonuses (PermanentUpgradeStation tarafından set edilir) ──
+    /// <summary>Kalıcı max HP bonusu (flat)</summary>
+    public static int   PermanentMaxHPBonus           = 0;
+    /// <summary>Run başında HP yüzdesi bonusu (0.1 = +%10)</summary>
+    public static float PermanentStartingHPBonus      = 0f;
+    /// <summary>Kalıcı hasar çarpanı bonusu (0.1 = +%10)</summary>
+    public static float PermanentDamageBonus          = 0f;
+    /// <summary>Kalıcı enfeksiyon yavaşlama bonusu (0.1 = %10 daha yavaş artar)</summary>
+    public static float PermanentInfectionSlowBonus   = 0f;
+    /// <summary>Upgrade seçiminde ek kart sayısı</summary>
+    public static int   PermanentExtraUpgradeChoices  = 0;
+    /// <summary>Run sonu Serum dönüşüm bonusu (0.1 = +%10)</summary>
+    public static float PermanentSerumBonus           = 0f;
+
+    /// <summary>Kalıcı bonusları sıfırla — PermanentUpgradeStation.ResetAll() çağırır.</summary>
+    public static void ResetPermanentBonuses()
+    {
+        PermanentMaxHPBonus          = 0;
+        PermanentStartingHPBonus     = 0f;
+        PermanentDamageBonus         = 0f;
+        PermanentInfectionSlowBonus  = 0f;
+        PermanentExtraUpgradeChoices = 0;
+        PermanentSerumBonus          = 0f;
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────
 
     /// <summary>Yeni run başlarken çağır — run state sıfırlanır, meta korunur.</summary>

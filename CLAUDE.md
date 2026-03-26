@@ -11,6 +11,69 @@ Aktif scriptler: `Assets/Erdem/2nd/Scripts/` — Legacy klasörü eski/kullanıl
 
 ---
 
+## 👤 Ekip Rolleri
+
+| Kişi | Sorumluluk |
+|------|-----------|
+| **Alpin** | Kod, game design, sistem tasarımı |
+| **Erdem** | Tüm art — modeller, animasyonlar, materyaller, ses, level design, çevre tasarımı |
+
+---
+
+## 🎨 Erdem'in Yapacakları (Sprint 01 — Sırasıyla)
+
+> **Not:** Bu listeyi Claude her session başında Erdem'e hatırlatmalı.
+
+### 1. TestScene — NavMesh Bake ⚠️ ÖNCELİKLİ
+Zombiler zeminde yürüyebilsin:
+```
+Window → AI → Navigation → Bake
+```
+Sahne: `Assets/Erdem/Scenes/TestScene.unity`
+Zemin zaten Static olarak işaretli, sadece Bake yeterli.
+
+### 2. WaveManager Prefab Ataması
+```
+Hierarchy → WaveManager → Inspector
+  _wave1EnemyPrefab = ZombieRoot2
+```
+
+### 3. S01-03 — Koşucu Zombie Prefabı (Toy Terror Teması)
+- Mevcut `ZombieRoot2` prefabını kopyala → `ToyRunnerZombie` adını ver
+- Plastik/oyuncak materyal uygula (parlak renkler)
+- Ses placeholder ekle (Unity default sesler kabul)
+- `Assets/Erdem/2nd/Prefabs/` altına kaydet
+
+### 4. S01-04 — Upgrade Seçim UI Teması
+- `UpgradeSelectionUI` kartlarının renklerini Toy Terror paletine uyarla
+- Font: renkli, çocuksu ama okunabilir
+- Referans: GDD'deki "parlak renkler, plastik estetik"
+
+### 5. S01-08 — Plastik Kırılma Hit Feedback
+- Zombie vurulunca plastik parçacık efekti (particle system)
+- Plastik kırılma sesi placeholder
+- Mevcut `ZombieHitFlash.cs` script'i hazır, sadece particle + ses ata
+
+### 6. TeddyBoss Prefab + Animasyonlar
+- `TeddyBoss.cs` script'i yazıldı (`Assets/Erdem/2nd/Scripts/Zombie/TeddyBoss.cs`)
+- Prefab oluştur, script'i ekle
+- Animator Controller'da şu trigger/bool'ları oluştur:
+  - `IsWalking` (bool)
+  - `Attack` (trigger)
+  - `Charge` (trigger)
+  - `Phase2` (trigger)
+  - `Phase3` (trigger)
+  - `Die` (trigger)
+- Faz 3 için üzücü/kırık melodi ses dosyası
+
+### 7. Level Design — Combat Room Sahnesi
+- Düz, açık alan (bina yok — zombi takılmasın)
+- Modüler duvar/zemin asset'leri ile çevrili arena
+- NavMesh için tüm zeminler Static işaretli
+- Referans his: oyun odası, oyuncak kutuları scattered
+
+---
+
 ## Teknoloji
 - Unity (URP)
 - DOTween (UI animasyonları)

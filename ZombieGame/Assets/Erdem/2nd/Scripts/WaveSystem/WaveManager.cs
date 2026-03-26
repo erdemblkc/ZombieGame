@@ -72,6 +72,8 @@ public class WaveManager : MonoBehaviour
 
     private int _wavesCompletedInRoom = 0;
     private readonly List<GameObject> _activeEnemies = new List<GameObject>();
+    private float _eliteHealthMultiplier  = 1f;
+    private float _eliteDamageMultiplier  = 1f;
 
     // ── Dahili Wave Tanımları ─────────────────────────────────────────────
 
@@ -204,6 +206,13 @@ public class WaveManager : MonoBehaviour
         _activeEnemies.Add(enemy);
     }
 
+    /// <summary>RoomManager tarafından elite odalar için çağrılır.</summary>
+    public void SetEliteMultipliers(float healthMul, float damageMul)
+    {
+        _eliteHealthMultiplier  = healthMul;
+        _eliteDamageMultiplier  = damageMul;
+    }
+
     // ── Config Builder ────────────────────────────────────────────────────
 
     WaveConfig BuildConfig(int waveNumber)
@@ -236,8 +245,8 @@ public class WaveManager : MonoBehaviour
         config.waveNumber        = waveNumber;
         config.timeBetweenSpawns = def.spawnInterval;
         config.speedMultiplier   = def.speed;
-        config.damageMultiplier  = def.damage;
-        config.healthMultiplier  = def.health;
+        config.damageMultiplier  = def.damage  * _eliteDamageMultiplier;
+        config.healthMultiplier  = def.health  * _eliteHealthMultiplier;
         config.enemies.Add(new EnemySpawnEntry { enemyPrefab = prefab, count = def.count });
         return config;
     }
@@ -257,8 +266,8 @@ public class WaveManager : MonoBehaviour
         config.waveNumber        = waveNumber;
         config.timeBetweenSpawns = Mathf.Max(0.2f, _timeBetweenSpawns - extraWaves * 0.02f);
         config.speedMultiplier   = speedMul;
-        config.damageMultiplier  = damageMul;
-        config.healthMultiplier  = healthMul;
+        config.damageMultiplier  = damageMul * _eliteDamageMultiplier;
+        config.healthMultiplier  = healthMul * _eliteHealthMultiplier;
         config.enemies.Add(new EnemySpawnEntry { enemyPrefab = prefab, count = count });
         return config;
     }

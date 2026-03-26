@@ -72,14 +72,11 @@ public class RoomManager : MonoBehaviour
 
     void ApplyEliteModifiers()
     {
-        // WaveManager konfigürasyonuna elite çarpanlar uygulanır
-        // WaveManager'ın BuildConfig metodu GlobalGameState.SavedWave'e göre çalışır,
-        // burada sadece override WaveConfig'i runtime'da değiştiriyoruz.
         var wm = FindFirstObjectByType<WaveManager>(FindObjectsInactive.Include);
         if (wm == null) return;
 
-        // WaveConfig runtime override — elite multipliers enjekte et
-        // (WaveManager'ın OnWaveConfigBuilt event'i üzerinden — bir sonraki adımda)
+        // WaveManager'a elite çarpanları enjekte et
+        wm.SetEliteMultipliers(_eliteHealthMul, _eliteDamageMul);
         Debug.Log($"[RoomManager] Elite mod aktif — HP x{_eliteHealthMul}, Hasar x{_eliteDamageMul}");
     }
 

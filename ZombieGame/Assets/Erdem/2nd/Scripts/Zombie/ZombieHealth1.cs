@@ -69,6 +69,7 @@ public class ZombieHealth1 : MonoBehaviour, IDamageable
         // Hit feedback
         GetComponent<ZombieHitFlash>()?.Flash();
         GetComponent<ZombieHitReact>()?.React(Camera.main != null ? Camera.main.transform.position : transform.position);
+        GetComponent<PlasticHitEffect>()?.PlayHitEffect(amount, maxHealth);
 
         if (currentHealth <= 0f)
             Die();
