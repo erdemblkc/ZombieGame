@@ -64,7 +64,7 @@ public class UpgradeSelectionUI : MonoBehaviour
         if (_panel == null) { Debug.LogError("[UpgradeSelectionUI] Panel reference is NULL."); return; }
 
         if (_titleLabel != null)
-            _titleLabel.text = $"WAVE {completedWaveNumber} TAMAMLANDI\nBir Upgrade Seç";
+            _titleLabel.text = "Bir Upgrade Seç";
 
         PopulateCards();
 
@@ -73,7 +73,9 @@ public class UpgradeSelectionUI : MonoBehaviour
         Cursor.visible   = true;
 
         _panel.SetActive(true);
-        _canvasGroup.alpha = 0f;
+        _canvasGroup.alpha          = 0f;
+        _canvasGroup.interactable   = true;
+        _canvasGroup.blocksRaycasts = true;
         _panel.transform.localScale = Vector3.one * 0.9f;
 
         DOTween.Sequence()

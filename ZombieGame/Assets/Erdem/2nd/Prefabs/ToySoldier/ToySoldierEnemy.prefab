@@ -172,7 +172,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ToySoldierAI
   target: {fileID: 0}
   chaseRange: 40
-  firingRange: 12
+  firingRange: 16
   minRange: 2
   moveSpeed: 3.5
   turnSpeed: 10
@@ -214,7 +214,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ToySoldierShooter
   bulletPrefab: {fileID: 7155454320632281040, guid: 65f418cc42e5a5545b64d3260665b1d7, type: 3}
-  fireInterval: 1.8
   spreadAngle: 6
   muzzlePoint: {fileID: 71668961915058919}
   audioSource: {fileID: 0}
@@ -238,7 +237,7 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.6902097
+  m_Radius: 1.46
   m_Height: 5.1101775
   m_Direction: 1
   m_Center: {x: 0.06517288, y: 2.0550883, z: -0.0007414434}

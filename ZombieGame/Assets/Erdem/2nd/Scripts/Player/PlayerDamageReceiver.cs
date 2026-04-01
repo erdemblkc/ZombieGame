@@ -74,6 +74,7 @@ public class PlayerDamageReceiver : MonoBehaviour
         float effectiveDamage = damageAmount * armorDamageMultiplier;
         currentHealth = Mathf.Clamp(currentHealth - effectiveDamage, 0f, maxHealth);
         _infection.OnPlayerDamaged();
+        DamageVignetteUI.Instance?.Play();
 
         if (currentHealth <= 0f)
         {

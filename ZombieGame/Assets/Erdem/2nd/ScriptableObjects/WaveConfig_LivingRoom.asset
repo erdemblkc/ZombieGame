@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8b8c45cfc87f6a41b3b81a4db9a8cfb, type: 3}
+  m_Name: WaveConfig_LivingRoom
+  m_EditorClassIdentifier: Assembly-CSharp::WaveConfig
+  waveNumber: 1
+  enemies:
+  - enemyPrefab: {fileID: 6627870355881276903, guid: 7a0021147ecd6c44493196edd06d1cfd, type: 3}
+    count: 5
+    groupDelay: 0
+  timeBetweenSpawns: 0.8
+  preparationTime: 0
+  speedMultiplier: 1
+  damageMultiplier: 1
+  healthMultiplier: 1

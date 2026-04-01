@@ -23,21 +23,35 @@ public class WaveHUD : MonoBehaviour
     [SerializeField] private float _announcementShowDuration = 2f;
     [SerializeField] private float _completionShowDuration   = 1.5f;
 
+    [Header("Oda İsimleri (opsiyonel)")]
+    [Tooltip("Wave numarasına karşılık gelen oda ismi. Wave 1 → index 0, Wave 2 → index 1 vb.")]
+    [SerializeField] private string[] _roomNames;
+
     // ── API ───────────────────────────────────────────────────────────────
 
     /// <summary>Günceller köşedeki kalıcı etiketi ve büyük Wave N duyurusunu gösterir.</summary>
     public void ShowWaveAnnouncement(int waveNumber)
     {
-        if (_persistentLabel != null)
-            _persistentLabel.text = $"Wave {waveNumber}";
+        string label = GetLabel(waveNumber);
 
-        ShowAnnouncement($"WAVE {waveNumber}", _announcementShowDuration);
+        if (_persistentLabel != null)
+            _persistentLabel.text = label;
+
+        ShowAnnouncement(label.ToUpper(), _announcementShowDuration);
     }
 
-    /// <summary>"WAVE TAMAMLANDI" metnini kısa süreliğine gösterir.</summary>
+    /// <summary>Wave tamamlandığında kısa duyuru gösterir.</summary>
     public void ShowWaveComplete(int waveNumber)
     {
-        ShowAnnouncement($"WAVE {waveNumber}\nTAMAMLANDI", _completionShowDuration);
+        ShowAnnouncement($"{GetLabel(waveNumber).ToUpper()}\nTEMİZLENDİ", _completionShowDuration);
+    }
+
+    string GetLabel(int waveNumber)
+    {
+        int idx = waveNumber - 1;
+        if (_roomNames != null && idx >= 0 && idx < _roomNames.Length && !string.IsNullOrEmpty(_roomNames[idx]))
+            return _roomNames[idx];
+        return $"Wave {waveNumber}";
     }
 
     // ── Internal ──────────────────────────────────────────────────────────

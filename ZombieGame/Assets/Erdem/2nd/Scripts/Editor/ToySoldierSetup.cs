@@ -11,6 +11,43 @@ public static class ToySoldierSetup
     private const string FolderPath  = "Assets/Erdem/2nd/Prefabs/ToySoldier/";
     private const string SavePath    = "Assets/Erdem/2nd/Prefabs/ToySoldier/ToySoldierAnimator.controller";
 
+    [MenuItem("Tools/ZombieGame/Create ToySoldier Wave Configs")]
+    public static void CreateWaveConfigs()
+    {
+        string folder = "Assets/Erdem/2nd/ScriptableObjects/";
+
+        // Wave 1 — Living Room: 5 asker
+        var w1 = ScriptableObject.CreateInstance<WaveConfig>();
+        w1.waveNumber        = 1;
+        w1.timeBetweenSpawns = 0.8f;
+        w1.speedMultiplier   = 1f;
+        w1.damageMultiplier  = 1f;
+        w1.healthMultiplier  = 1f;
+        // enemies listesi Inspector'dan doldurulacak
+        AssetDatabase.CreateAsset(w1, folder + "WaveConfig_LivingRoom.asset");
+
+        // Wave 2 — Bedroom: 8 asker
+        var w2 = ScriptableObject.CreateInstance<WaveConfig>();
+        w2.waveNumber        = 2;
+        w2.timeBetweenSpawns = 0.65f;
+        w2.speedMultiplier   = 1.2f;
+        w2.damageMultiplier  = 1.1f;
+        w2.healthMultiplier  = 1.2f;
+        AssetDatabase.CreateAsset(w2, folder + "WaveConfig_Bedroom.asset");
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        Debug.Log("[ToySoldierSetup] WaveConfig'ler oluşturuldu: " + folder);
+        EditorUtility.DisplayDialog("ToySoldier Setup",
+            "WaveConfig asset'leri oluşturuldu!\n\n" +
+            "Her WaveConfig'te 'Enemies' listesine:\n" +
+            "  Enemy Prefab: ToySoldierEnemy\n" +
+            "  Count: 5 (LivingRoom) / 8 (Bedroom)\n\n" +
+            "WaveManager → _waveConfigs dizisine ata.",
+            "Tamam");
+    }
+
     [MenuItem("Tools/ZombieGame/Create ToySoldier Animator Controller")]
     public static void CreateAnimatorController()
     {
