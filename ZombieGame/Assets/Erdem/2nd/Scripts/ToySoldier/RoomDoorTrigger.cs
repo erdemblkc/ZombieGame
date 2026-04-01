@@ -25,6 +25,10 @@ public class RoomDoorTrigger : MonoBehaviour
     [Header("Fade")]
     public float fadeDuration = 1f;
 
+    [Header("Oda İsmi (opsiyonel)")]
+    [Tooltip("Geçiş sonrası ekranda gösterilecek oda ismi. Boş bırakılırsa gösterilmez.")]
+    public string roomName;
+
     [Header("Prompt (opsiyonel)")]
     [Tooltip("Wave bitmeden önce gösterilecek mesaj canvas'ı (null bırakılabilir).")]
     public GameObject lockedPrompt;
@@ -117,6 +121,14 @@ public class RoomDoorTrigger : MonoBehaviour
             yield return null;
         }
         _fadeImage.color = new Color(0f, 0f, 0f, 0f);
+
+        // Oda ismini göster
+        if (!string.IsNullOrEmpty(roomName))
+        {
+            var waveHUD = FindFirstObjectByType<WaveHUD>();
+            waveHUD?.ShowRoomName(roomName);
+        }
+
         _transitioning = false;
     }
 

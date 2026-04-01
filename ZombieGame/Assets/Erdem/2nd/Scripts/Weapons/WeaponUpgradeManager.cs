@@ -16,6 +16,8 @@ public class WeaponUpgradeManager : MonoBehaviour
     public GunShooter shooter; // GunShooter scriptini buraya sürükle
 
     [Header("Text Settings")]
+    [Tooltip("Upgrade yazısını ekranda göster. Kapat = sağ üstteki yazı gizlenir.")]
+    public bool showMissionText = false;
     public string missionTextFormat = "Upgrade your weapon! Collect parts {0}/{1}";
 
     [Header("Weapons - Assign in Inspector")]
@@ -77,7 +79,7 @@ public class WeaponUpgradeManager : MonoBehaviour
     void SetMissionVisible(bool visible)
     {
         if (missionTextObject != null)
-            missionTextObject.SetActive(visible);
+            missionTextObject.SetActive(visible && showMissionText);
     }
 
     void CompleteUpgrade()

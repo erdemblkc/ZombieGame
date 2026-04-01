@@ -20,7 +20,10 @@
       "mcp__mcp-unity__update_component",
       "Bash(node:*)",
       "mcp__mcp-unity__save_scene",
-      "Skill(sprint-plan)"
+      "Skill(sprint-plan)",
+      "Bash(grep -r \"living room\\\\|bedroom\\\\|upgrade weapon\" C:UsersErdemOneDriveDocumentsGitHubZombieGameZombieGameAssets --include=*.unity --include=*.prefab --include=*.cs)",
+      "Bash(xargs grep:*)",
+      "Bash(find /c/Users/Erdem/OneDrive/Documents/GitHub/ZombieGame/ZombieGame/Assets/Erdem -type f -name *Door* -o -name *Portal* -o -name *Teleport*)"
     ]
   }
 }
